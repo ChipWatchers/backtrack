@@ -43,6 +43,12 @@ async function playAudio(text, voiceId = null) {
     return;
   }
 
+  // Check if running on macOS - SKIP audio on Linux/Server environments
+  if (process.platform !== 'darwin') {
+    console.log(`🔇 Server audio skipped (not macOS): "${text}"`);
+    return;
+  }
+
   // If voiceId is provided, use ElevenLabs API
   if (voiceId) {
     try {
@@ -56,7 +62,7 @@ async function playAudio(text, voiceId = null) {
 
       // Call ElevenLabs API
       const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
-      
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -127,7 +133,6 @@ async function playAudio(text, voiceId = null) {
 async function playAudioWithSay(text) {
   try {
     // Escape special characters for shell command
-    // Replace single quotes with escaped version and wrap in single quotes
     const escapedText = text.replace(/'/g, "'\"'\"'");
 
     // Use macOS 'say' command
@@ -145,4 +150,3 @@ async function playAudioWithSay(text) {
 module.exports = {
   playAudio
 };
-

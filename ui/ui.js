@@ -2,7 +2,7 @@
  * Friends Management UI
  */
 
-const API_BASE = 'http://localhost:3001';
+const API_BASE = 'https://backtrack-production-06ac.up.railway.app';
 
 // Generate or retrieve user ID from localStorage
 function getUserId() {
@@ -159,7 +159,54 @@ function initializeOnboarding() {
       }
     });
   }
+
+  // Test Alert button (from Main)
+  const testAlertBtn = document.getElementById('testAlertBtn');
+  if (testAlertBtn) {
+    testAlertBtn.addEventListener('click', async () => {
+      try {
+        const userId = getUserId();
+        const response = await fetch(`${API_BASE}/trigger`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: userId || null })
+        });
+
+        if (response.ok) {
+          showSuccess('Test alert triggered! Check your console and wait 15s for AI response.');
+        } else {
+          showError('Failed to trigger test alert. Make sure bot server is running.');
+        }
+      } catch (error) {
+        console.error('Failed to trigger test alert:', error);
+        showError('Failed to trigger test alert. Make sure bot server is running.');
+      }
+    });
+  }
+
+  // Dismiss banner (from Main)
+  const dismissBanner = document.getElementById('dismissBanner');
+  const gotItBtn = document.getElementById('gotItBtn');
+
+  const hideBanner = () => {
+    const welcomeBanner = document.getElementById('welcomeBanner');
+    if (welcomeBanner) {
+      welcomeBanner.style.display = 'none';
+      localStorage.setItem('postureSnitch_onboardingComplete', 'true');
+    }
+  };
+
+  if (dismissBanner) {
+    dismissBanner.addEventListener('click', hideBanner);
+  }
+
+  if (gotItBtn) {
+    gotItBtn.addEventListener('click', hideBanner);
+  }
 }
+
 
 function initializeFriendsManagement() {
   // Generate user-specific bot link with userId parameter
@@ -444,10 +491,10 @@ function initializePersonalitySelector() {
     if (selectedVoiceId) {
       localStorage.setItem('postureSnitch_selectedPersonality', selectedVoiceId);
       console.log('🎭 Personality changed and saved to localStorage:', selectedVoiceId);
-      
+
       // Update confirmation display
       updatePersonalityConfirmation(selectedVoiceId);
-      
+
       // Verify it was saved
       const verify = localStorage.getItem('postureSnitch_selectedPersonality');
       console.log('🎭 Verified localStorage value:', verify);
@@ -457,14 +504,14 @@ function initializePersonalitySelector() {
   });
 
   // Also expose function to get current selection
-  window.getSelectedPersonality = function() {
+  window.getSelectedPersonality = function () {
     const current = localStorage.getItem('postureSnitch_selectedPersonality') || 'FRzaj7L4px15biN0RGSj';
     console.log('🎭 getSelectedPersonality() called, returning:', current);
     return current;
   };
 
   // Expose function to set personality programmatically
-  window.setSelectedPersonality = function(voiceId) {
+  window.setSelectedPersonality = function (voiceId) {
     if (personalitySelector.querySelector(`option[value="${voiceId}"]`)) {
       personalitySelector.value = voiceId;
       localStorage.setItem('postureSnitch_selectedPersonality', voiceId);
@@ -483,7 +530,7 @@ let slouchChart = null;
 
 function initializeSlouchTracker() {
   updateSlouchGraph();
-  
+
   // Update graph every minute
   setInterval(updateSlouchGraph, 60000);
 }
@@ -497,7 +544,7 @@ function updateSlouchGraph() {
     const slouchesKey = 'postureSnitch_slouches';
     const slouchesJson = localStorage.getItem(slouchesKey);
     const slouches = slouchesJson ? JSON.parse(slouchesJson) : [];
-    
+
     if (slouches.length === 0) {
       // Show empty state
       const canvas = document.getElementById('slouchChart');
@@ -515,29 +562,29 @@ function updateSlouchGraph() {
       }
       return;
     }
-    
+
     // Aggregate slouches by hour
     const hourlyData = aggregateSlouchesByHour(slouches);
-    
+
     // Get last 24 hours of data
     const now = new Date();
     const last24Hours = [];
     const labels = [];
-    
+
     for (let i = 23; i >= 0; i--) {
       const hourDate = new Date(now);
       hourDate.setHours(hourDate.getHours() - i);
       hourDate.setMinutes(0);
       hourDate.setSeconds(0);
       hourDate.setMilliseconds(0);
-      
+
       const hourKey = hourDate.getTime();
       const hourLabel = hourDate.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
       labels.push(hourLabel);
-      
+
       last24Hours.push(hourlyData[hourKey] || 0);
     }
-    
+
     // Calculate stats
     const totalSlouches = slouches.length;
     const todaySlouches = slouches.filter(ts => {
@@ -546,24 +593,24 @@ function updateSlouchGraph() {
       return slouchDate.toDateString() === today.toDateString();
     }).length;
     const maxHour = Math.max(...last24Hours, 0);
-    
+
     // Update stats display
     const stats = document.getElementById('slouchStats');
     if (stats) {
       stats.textContent = `Total: ${totalSlouches} | Today: ${todaySlouches} | Max per hour (last 24h): ${maxHour}`;
     }
-    
+
     // Draw or update chart
     const canvas = document.getElementById('slouchChart');
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
-    
+
     // Destroy existing chart if it exists
     if (slouchChart) {
       slouchChart.destroy();
     }
-    
+
     // Create new chart with fixed size
     slouchChart = new Chart(ctx, {
       type: 'line',
@@ -620,7 +667,7 @@ function updateSlouchGraph() {
         }
       }
     });
-    
+
   } catch (error) {
     console.error('❌ Failed to update slouch graph:', error.message);
   }
@@ -628,7 +675,7 @@ function updateSlouchGraph() {
 
 function aggregateSlouchesByHour(slouches) {
   const hourlyData = {};
-  
+
   slouches.forEach(timestamp => {
     const date = new Date(timestamp);
     // Round down to the hour
@@ -636,11 +683,11 @@ function aggregateSlouchesByHour(slouches) {
     hourDate.setMinutes(0);
     hourDate.setSeconds(0);
     hourDate.setMilliseconds(0);
-    
+
     const hourKey = hourDate.getTime();
     hourlyData[hourKey] = (hourlyData[hourKey] || 0) + 1;
   });
-  
+
   return hourlyData;
 }
 

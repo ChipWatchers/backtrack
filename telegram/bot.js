@@ -14,6 +14,9 @@ let messagesReceived = 0;
 // Track active alert session (one per trigger)
 let activeAlertSession = null; // { timerId, responses: Map<chatId, {name, text, voiceId}>, enabledFriends: [], guardianPersonalities: Map<chatId, voiceId> }
 
+// Audio Event Queue for Client Polling
+const audioQueue = [];
+
 // Track contacts who have messaged the bot (for auto-detection)
 const detectedContacts = new Map(); // chatId -> { chatId, username, firstName }
 
@@ -133,7 +136,7 @@ async function pollUpdates() {
           // Handle personality selection
           if (data && data.startsWith('personality_')) {
             const voiceId = data.replace('personality_', '');
-            
+
             // Find the voice name
             const voices = getAllVoices();
             const selectedVoice = voices.find(v => v.id === voiceId);
@@ -142,7 +145,7 @@ async function pollUpdates() {
             // Check if this is from an enabled friend in the active alert session
             if (activeAlertSession) {
               const friend = activeAlertSession.enabledFriends.find(f => f.chatId === chatId);
-              
+
               if (friend) {
                 // Store guardian's personality selection per guardian (Map: chatId -> voiceId)
                 if (!activeAlertSession.guardianPersonalities) {
@@ -150,7 +153,7 @@ async function pollUpdates() {
                 }
                 activeAlertSession.guardianPersonalities.set(chatId, voiceId);
                 console.log(`🎭 Guardian ${friend.name} (${chatId}) selected personality: ${voiceName} (${voiceId})`);
-                
+
                 // Answer the callback query (removes loading state)
                 try {
                   await fetch(`${TELEGRAM_API_URL}/answerCallbackQuery`, {
@@ -208,7 +211,7 @@ async function pollUpdates() {
             // Check if this is from an enabled friend in the active alert session
             if (activeAlertSession) {
               const friend = activeAlertSession.enabledFriends.find(f => f.chatId === chatId);
-              
+
               if (friend) {
                 // Answer callback query immediately (show loading)
                 try {
@@ -229,14 +232,14 @@ async function pollUpdates() {
                 const guardianVoiceId = activeAlertSession.guardianPersonalities?.get(chatId) || null;
                 const voiceIdToUse = guardianVoiceId || activeAlertSession.voiceId || 'FRzaj7L4px15biN0RGSj';
                 const personalitySource = guardianVoiceId ? 'guardian-selected' : 'user-default';
-                
+
                 console.log(`🎭 Guardian ${friend.name} (${chatId}) generating AI roast with ${personalitySource} personality: ${voiceIdToUse}`);
 
                 // Generate AI insult
                 try {
                   const insultResult = await generatePostureInsult(voiceIdToUse);
                   const generatedText = insultResult.text;
-                  
+
                   console.log(`🤖 Generated AI roast for ${friend.name}: "${generatedText}"`);
 
                   // Simulate guardian reply by adding to activeAlertSession.responses with voiceId
@@ -389,7 +392,28 @@ async function pollUpdates() {
                 voiceId: guardianVoiceId // Store voiceId so we can play it with that voice
               });
 
-              console.log(`📨 Reply received from ${friendName} (${chatId}): ${text}${guardianVoiceId ? ` [Voice: ${guardianVoiceId}]` : ''}`);
+              console.log(`📝 Processing ${responses.length} response(s) with voice playback`);
+
+              // Queue each response individually so the client can play them with correct voices
+              for (const response of responses) {
+                const voiceId = response.voiceId || null;
+                const formattedText = `${response.name} says ${response.text}`;
+
+                // Logic from HEAD was to play locally. Logic from Main is to queue.
+                // We queue it for the client.
+                audioQueue.push({
+                  text: formattedText,
+                  originalText: response.text, // raw text
+                  name: response.name,
+                  voiceId: voiceId, // Pass voiceId to client!
+                  timestamp: Date.now(),
+                  type: 'reply'
+                });
+
+                console.log(`🔊 Queued response from ${response.name}${voiceId ? ` with voice ${voiceId}` : ' (default voice)'}`);
+              }
+
+              console.log(`✅ Queued all ${responses.length} response(s) for client playback`);
 
               // Mark that a friend replied - this prevents AI insult from playing
               activeAlertSession.aiInsultCancelled = true;
@@ -553,6 +577,7 @@ function autoAddFriendForUser(chatId, from, userId) {
   }
 }
 
+
 /**
  * Process and play collated friend responses
  * Each response can have its own voiceId (if guardian selected a personality)
@@ -566,28 +591,29 @@ async function processFriendResponses(session) {
 
   console.log(`📝 Processing ${responses.length} response(s) with voice playback`);
 
-  // Play each response with its selected voice (if any) or default
+  // Queue each response individually so the client can play them with correct voices
   for (const response of responses) {
-    const voiceId = response.voiceId || null; // Use guardian's selected voice or null (default say command)
-    // Format: "Name says: text" - this ensures name is pronounced first
+    const voiceId = response.voiceId || null;
     const formattedText = `${response.name} says ${response.text}`;
-    
-    try {
-      await playAudio(formattedText, voiceId);
-      console.log(`🔊 Played response from ${response.name}${voiceId ? ` with voice ${voiceId}` : ' (default voice)'}`);
-    } catch (error) {
-      console.error(`❌ Failed to play response from ${response.name}:`, error.message);
-    }
-    
-    // Small delay between responses for clarity
-    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // We queue it for the client.
+    audioQueue.push({
+      text: formattedText,
+      originalText: response.text,
+      name: response.name,
+      voiceId: voiceId,
+      timestamp: Date.now(),
+      type: 'reply'
+    });
+
+    console.log(`🔊 Queued response from ${response.name}${voiceId ? ` with voice ${voiceId}` : ' (default voice)'}`);
   }
 
-  console.log(`✅ Finished playing all ${responses.length} response(s)`);
+  console.log(`✅ Queued all ${responses.length} response(s) for client playback`);
 }
 
 function startHttpServer() {
-  const PORT = 3001;
+  const PORT = process.env.PORT || 3001;
   const url = require('url');
 
   const server = http.createServer(async (req, res) => {
@@ -745,6 +771,17 @@ function startHttpServer() {
       return;
     }
 
+    // GET /audio-events - Client polls this to play audio
+    if (pathname === '/audio-events' && req.method === 'GET') {
+      const events = [...audioQueue];
+      // Clear queue after sending
+      audioQueue.length = 0;
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ events }));
+      return;
+    }
+
     if (req.url === '/trigger' && req.method === 'POST') {
       console.log("🔥 Received Trigger from Browser!");
 
@@ -752,8 +789,11 @@ function startHttpServer() {
       let userId = null;
       let body = '';
 
+<<<<<<< HEAD
       let userName = null;
       let voiceId = 'FRzaj7L4px15biN0RGSj'; // Default fallback
+=======
+>>>>>>> main
       await new Promise((resolve) => {
         req.on('data', chunk => { body += chunk.toString(); });
         req.on('end', () => {
@@ -762,10 +802,10 @@ function startHttpServer() {
             if (body) {
               const parsedBody = JSON.parse(body);
               console.log('🎭 [BOT.JS] Parsed request body:', JSON.stringify(parsedBody));
-              
+
               userId = parsedBody.userId || null;
               userName = parsedBody.userName || null;
-              
+
               // CRITICAL: Get voiceId from request - this MUST come from UI
               if (parsedBody.voiceId) {
                 voiceId = parsedBody.voiceId;
@@ -773,14 +813,14 @@ function startHttpServer() {
               } else {
                 console.error('❌ [BOT.JS] NO voiceId in request body! Using default:', voiceId);
               }
-              
+
               // Validate voiceId
               const validVoiceIds = ['FRzaj7L4px15biN0RGSj', 'wJ5MX7uuKXZwFqGdWM4N', 'ljEOxtzNoGEa58anWyea', 'K8nDX2f6wjv6bCh5UeZi', 'nw6EIXCsQ89uJMjytYb8', 'gad8DmXGyu7hwftX9JqI', 'spZS54yMfsj80VHtUQFY', 'yqZhXcy5spYR7Hhv17QY'];
               if (!validVoiceIds.includes(voiceId)) {
                 console.error('❌ [BOT.JS] Invalid voiceId:', voiceId, '- using default');
                 voiceId = 'FRzaj7L4px15biN0RGSj';
               }
-              
+
               console.log('🎭 [BOT.JS] Final voiceId to use:', voiceId);
             } else {
               console.error('❌ [BOT.JS] No request body received! Using default:', voiceId);
@@ -797,6 +837,7 @@ function startHttpServer() {
       const enabledFriends = friends.filter(f => f.enabled !== false);
       console.log(`📋 Sending alerts to ${enabledFriends.length} enabled friend(s) out of ${friends.length} total friend(s)`);
 
+<<<<<<< HEAD
       // If no friends to alert, generate and play AI insult immediately (no waiting)
       if (enabledFriends.length === 0) {
         console.log('ℹ️  No friends to alert - generating AI insult immediately');
@@ -823,6 +864,9 @@ function startHttpServer() {
       const alertMessage = userName && userName.trim()
         ? `🚨 ${userName} is slouching! Tell them to GET UP and straighten out RIGHT NOW or prepare for absolute verbal annihilation! No mercy! 💀`
         : '🚨 Someone is slouching! Tell them to GET UP and straighten out RIGHT NOW or prepare for absolute verbal annihilation! No mercy! 💀';
+=======
+      const alertMessage = '🚨 Posture Alert: You are slouching! Sit up straight!';
+>>>>>>> main
 
       // Cancel any existing alert session
       if (activeAlertSession && activeAlertSession.timerId) {
@@ -882,11 +926,15 @@ function startHttpServer() {
         console.log(`⏰ No replies from any friends within 15s, generating insult...`);
 
         try {
+<<<<<<< HEAD
           // Get voiceId - use user's default (guardian's selection only applies to their typed/generated messages)
           const sessionVoiceId = sessionRef.voiceId || null;
           console.log(`🎭 Generating timeout AI insult with user-selected voiceId: ${sessionVoiceId}`);
           const insultResult = await generatePostureInsult(sessionVoiceId);
           console.log(`🎭 Generated insult with voiceId: ${insultResult.voiceId}, voiceName: ${insultResult.voiceName}`);
+=======
+          const insult = await generatePostureInsult();
+>>>>>>> main
 
           // Final check before playing
           if (activeAlertSession !== sessionRef || sessionRef.aiInsultCancelled || sessionRef.responses.size > 0) {
@@ -894,10 +942,17 @@ function startHttpServer() {
             return;
           }
 
+<<<<<<< HEAD
           // Play the insult as audio with personality voice
           await playAudio(insultResult.text, insultResult.voiceId);
 
           console.log(`🔊 Played fallback insult (${insultResult.voiceName}): "${insultResult.text}"`);
+=======
+          // Queue the insult for client playback
+          audioQueue.push({ text: insult, timestamp: Date.now(), type: 'insult' });
+
+          console.log(`🔊 Queued fallback insult: "${insult}"`);
+>>>>>>> main
         } catch (error) {
           console.error(`❌ Failed to generate/play insult:`, error.message);
         }

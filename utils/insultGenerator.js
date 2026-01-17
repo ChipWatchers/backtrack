@@ -31,7 +31,12 @@ async function generatePostureInsult(voiceId = null) {
     }
   }
 
-  const { GEMINI_API_KEY } = loadSecrets();
+  let secrets = {};
+  try {
+    secrets = loadSecrets();
+  } catch (e) { /* ignore if file missing on railway */ }
+
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY || secrets.GEMINI_API_KEY;
 
   if (!GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY not found in config/secrets.env');

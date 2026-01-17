@@ -20,12 +20,18 @@ function loadSecrets() {
 
         return secrets;
     } catch (e) {
-        console.error("Could not load secrets.env", e);
+        // This is expected on Railway/Production where we use environment variables
+        // console.log("Using environment variables (secrets.env not found)");
         return {};
     }
 }
 
-const { BOT_TOKEN } = loadSecrets();
+const secrets = loadSecrets();
+const BOT_TOKEN = process.env.BOT_TOKEN || secrets.BOT_TOKEN;
+
+if (!BOT_TOKEN) {
+    console.error("❌ CRITICAL ERROR: BOT_TOKEN is missing! (Not in env var and not in secrets.env)");
+}
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 module.exports = {

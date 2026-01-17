@@ -6,6 +6,7 @@ import { getVideoStream } from './webcam.js';
 import { initPoseDetector, sendFrame } from './poseDetector.js';
 import { getPostureState, calibrate } from './postureEngine.js';
 import { processPostureState } from './triggerEngine.js';
+import { API_URL } from './config.js';
 
 // Simple state to track if we have calibrated
 let isCalibrated = false;
@@ -17,23 +18,23 @@ function trackSlouch() {
     try {
         const timestamp = Date.now();
         const slouchesKey = 'postureSnitch_slouches';
-        
+
         // Get existing slouches from localStorage
         const existingSlouchesJson = localStorage.getItem(slouchesKey);
         const slouches = existingSlouchesJson ? JSON.parse(existingSlouchesJson) : [];
-        
+
         // Add new slouch timestamp
         slouches.push(timestamp);
-        
+
         // Keep only last 7 days of data (to prevent localStorage from getting too large)
         const sevenDaysAgo = timestamp - (7 * 24 * 60 * 60 * 1000);
         const filteredSlouches = slouches.filter(ts => ts >= sevenDaysAgo);
-        
+
         // Save back to localStorage
         localStorage.setItem(slouchesKey, JSON.stringify(filteredSlouches));
-        
+
         console.log('📊 Slouch tracked at:', new Date(timestamp).toISOString());
-        
+
         // Trigger graph update if function exists
         if (window.updateSlouchGraph) {
             window.updateSlouchGraph();
@@ -90,35 +91,35 @@ async function onPoseResults(results) {
                 // Get userId, userName, and selected personality from localStorage
                 const userId = localStorage.getItem('postureSnitch_userId');
                 const userName = localStorage.getItem('postureSnitch_userName');
-                
+
                 // Get selected personality - ALWAYS read from dropdown first, it's the source of truth
                 let selectedPersonality = 'FRzaj7L4px15biN0RGSj'; // Default fallback
                 const personalitySelector = document.getElementById('personalitySelector');
-                
+
                 if (personalitySelector) {
-                  selectedPersonality = personalitySelector.value || selectedPersonality;
-                  console.log('🎭 [MAIN.JS] Selected personality from dropdown:', selectedPersonality);
+                    selectedPersonality = personalitySelector.value || selectedPersonality;
+                    console.log('🎭 [MAIN.JS] Selected personality from dropdown:', selectedPersonality);
                 } else {
-                  selectedPersonality = localStorage.getItem('postureSnitch_selectedPersonality') || selectedPersonality;
-                  console.log('🎭 [MAIN.JS] Dropdown not found, using localStorage:', selectedPersonality);
+                    selectedPersonality = localStorage.getItem('postureSnitch_selectedPersonality') || selectedPersonality;
+                    console.log('🎭 [MAIN.JS] Dropdown not found, using localStorage:', selectedPersonality);
                 }
-                
+
                 // Validate we have a valid voiceId
                 const validVoiceIds = ['FRzaj7L4px15biN0RGSj', 'wJ5MX7uuKXZwFqGdWM4N', 'ljEOxtzNoGEa58anWyea', 'K8nDX2f6wjv6bCh5UeZi', 'nw6EIXCsQ89uJMjytYb8', 'gad8DmXGyu7hwftX9JqI', 'spZS54yMfsj80VHtUQFY', 'yqZhXcy5spYR7Hhv17QY'];
                 if (!validVoiceIds.includes(selectedPersonality)) {
-                  console.error('❌ [MAIN.JS] Invalid voiceId:', selectedPersonality, '- using default');
-                  selectedPersonality = 'FRzaj7L4px15biN0RGSj';
+                    console.error('❌ [MAIN.JS] Invalid voiceId:', selectedPersonality, '- using default');
+                    selectedPersonality = 'FRzaj7L4px15biN0RGSj';
                 }
-                
+
                 const requestBody = {
                     userId: userId || null,
                     userName: userName || null,
                     voiceId: selectedPersonality  // ALWAYS send voiceId, never null
                 };
-                
+
                 console.log('🎭 [MAIN.JS] Sending trigger request with body:', JSON.stringify(requestBody));
-                
-                fetch('http://localhost:3001/trigger', {
+
+                fetch(`${API_URL}/trigger`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -249,5 +250,33 @@ async function init() {
     }
 }
 
+// Poll for audio events (insults/replies) from the bot
+async function pollAudioEvents() {
+    try {
+        const response = await fetch(`${API_URL}/audio-events`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.events && data.events.length > 0) {
+                console.log(`🔊 Received ${data.events.length} audio event(s)`);
+
+                data.events.forEach(event => {
+                    if (event.text) {
+                        const utterance = new SpeechSynthesisUtterance(event.text);
+                        // Optional: Adjust voice/rate/pitch here
+                        window.speechSynthesis.speak(utterance);
+                        console.log(`🗣️ Speaking: "${event.text}"`);
+                    }
+                });
+            }
+        }
+    } catch (error) {
+        // Silent fail on polling errors to avoid console spam
+    }
+
+    // Poll again in 2 seconds
+    setTimeout(pollAudioEvents, 2000);
+}
+
 // Start the app
 init();
+pollAudioEvents();
