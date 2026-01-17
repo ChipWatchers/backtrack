@@ -129,5 +129,33 @@ async function init() {
     }
 }
 
+// Poll for audio events (insults/replies) from the bot
+async function pollAudioEvents() {
+    try {
+        const response = await fetch(`${API_URL}/audio-events`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.events && data.events.length > 0) {
+                console.log(`🔊 Received ${data.events.length} audio event(s)`);
+
+                data.events.forEach(event => {
+                    if (event.text) {
+                        const utterance = new SpeechSynthesisUtterance(event.text);
+                        // Optional: Adjust voice/rate/pitch here
+                        window.speechSynthesis.speak(utterance);
+                        console.log(`🗣️ Speaking: "${event.text}"`);
+                    }
+                });
+            }
+        }
+    } catch (error) {
+        // Silent fail on polling errors to avoid console spam
+    }
+
+    // Poll again in 2 seconds
+    setTimeout(pollAudioEvents, 2000);
+}
+
 // Start the app
 init();
+pollAudioEvents();

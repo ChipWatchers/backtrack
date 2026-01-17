@@ -13,6 +13,9 @@ let messagesReceived = 0;
 // Track active alert session (one per trigger)
 let activeAlertSession = null; // { timerId, responses: Map<chatId, {name, text}>, enabledFriends: [] }
 
+// Audio Event Queue for Client Polling
+const audioQueue = [];
+
 // Track contacts who have messaged the bot (for auto-detection)
 const detectedContacts = new Map(); // chatId -> { chatId, username, firstName }
 
@@ -295,13 +298,9 @@ async function processFriendResponses(session) {
 
   console.log(`📝 Collated responses: ${formattedResponses}`);
 
-  // Play the collated responses as audio
-  try {
-    await playAudio(formattedResponses);
-    console.log(`🔊 Played collated responses from ${responses.length} friend(s)`);
-  } catch (error) {
-    console.error(`❌ Failed to play collated responses:`, error.message);
-  }
+  // Queue the collated responses for client playback
+  audioQueue.push({ text: formattedResponses, timestamp: Date.now(), type: 'reply' });
+  console.log(`🔊 Queued collated responses from ${responses.length} friend(s)`);
 }
 
 function startHttpServer() {
@@ -448,6 +447,17 @@ function startHttpServer() {
       return;
     }
 
+    // GET /audio-events - Client polls this to play audio
+    if (pathname === '/audio-events' && req.method === 'GET') {
+      const events = [...audioQueue];
+      // Clear queue after sending
+      audioQueue.length = 0;
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ events }));
+      return;
+    }
+
     if (req.url === '/trigger' && req.method === 'POST') {
       console.log("🔥 Received Trigger from Browser!");
 
@@ -536,10 +546,10 @@ function startHttpServer() {
             return;
           }
 
-          // Play the insult as audio
-          await playAudio(insult);
+          // Queue the insult for client playback
+          audioQueue.push({ text: insult, timestamp: Date.now(), type: 'insult' });
 
-          console.log(`🔊 Played fallback insult: "${insult}"`);
+          console.log(`🔊 Queued fallback insult: "${insult}"`);
         } catch (error) {
           console.error(`❌ Failed to generate/play insult:`, error.message);
         }
