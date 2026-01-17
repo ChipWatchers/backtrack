@@ -1,4 +1,4 @@
-const { BOT_TOKEN, TELEGRAM_API_URL } = require('./bot.js');
+const { BOT_TOKEN, TELEGRAM_API_URL } = require('./config.js');
 
 /**
  * Send an alert message to a specific chat

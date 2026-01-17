@@ -40,17 +40,19 @@ async function onPoseResults(results) {
                 // TRIGGER HAPPENED
                 console.log("⚠️ SLOUCH DETECTED!");
 
+                // 1. Browser Notification
                 if (Notification.permission === "granted") {
                     new Notification("⚠️ SLOUCH DETECTED!", {
                         body: "Sit up straight!",
                         silent: false
                     });
                 } else {
-                    // Fallback
                     alert("⚠️ SLOUCH DETECTED!");
                 }
 
-                // TODO: Send signal to Telegram Bot
+                // 2. Telegram Bot Trigger
+                fetch('http://localhost:3001/trigger', { method: 'POST' })
+                    .catch(e => console.error("Failed to trigger bot:", e));
             });
         }
     }
