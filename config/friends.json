@@ -1,9 +1,14 @@
 {
   "friends": [
     {
+      "chatId": 5233952032,
+      "name": "@lilnas123",
+      "enabled": false
+    },
+    {
       "chatId": 1202231782,
-      "name": "You"
+      "name": "@bigmanting",
+      "enabled": true
     }
   ]
 }
-

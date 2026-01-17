@@ -48,3 +48,357 @@ button {
 button:hover {
     background-color: #45a049;
 }
+
+/* Friends Management Styles */
+.section {
+    background-color: #2d2d2d;
+    border: 2px solid #444;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px;
+    max-width: 600px;
+    width: 90%;
+}
+
+.section h2 {
+    margin-top: 0;
+    color: #4CAF50;
+    border-bottom: 2px solid #4CAF50;
+    padding-bottom: 10px;
+}
+
+/* Bot Sharing */
+.bot-link-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 15px 0;
+}
+
+.bot-link {
+    flex: 1;
+    padding: 10px;
+    background-color: #1e1e1e;
+    border: 2px solid #4CAF50;
+    border-radius: 4px;
+    color: #4CAF50;
+    text-decoration: none;
+    font-family: monospace;
+    text-align: center;
+}
+
+.bot-link:hover {
+    background-color: #2d4d2d;
+}
+
+.btn-secondary {
+    background-color: #2196F3;
+    padding: 10px 20px;
+}
+
+.btn-secondary:hover {
+    background-color: #1976D2;
+}
+
+.instruction {
+    font-size: 0.9em;
+    color: #aaa;
+    margin-top: 10px;
+    line-height: 1.5;
+}
+
+.instruction-small {
+    font-size: 0.85em;
+    color: #888;
+    margin: 10px 0;
+    font-style: italic;
+}
+
+/* Add Friend Form */
+.add-friend-form {
+    background-color: #1e1e1e;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.add-friend-form h3 {
+    margin-top: 0;
+    color: #fff;
+}
+
+.form-group {
+    margin: 10px 0;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #ccc;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    background-color: #2d2d2d;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #4CAF50;
+}
+
+.btn-primary {
+    background-color: #4CAF50;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn-primary:hover {
+    background-color: #45a049;
+}
+
+/* Friends List */
+.friends-list {
+    margin-top: 20px;
+}
+
+.friend-item {
+    background-color: #1e1e1e;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 10px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.friend-info {
+    flex: 1;
+}
+
+.friend-name {
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+.friend-chatId {
+    font-size: 0.9em;
+    color: #aaa;
+    font-family: monospace;
+}
+
+.friend-status {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    margin-left: 10px;
+}
+
+.friend-status.enabled {
+    background-color: #4CAF50;
+    color: #fff;
+}
+
+.friend-status.disabled {
+    background-color: #666;
+    color: #ccc;
+}
+
+.friend-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.toggle-switch {
+    position: relative;
+    width: 50px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #666;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #4CAF50;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+.btn-delete {
+    background-color: #f44336;
+    padding: 5px 15px;
+    font-size: 14px;
+}
+
+.btn-delete:hover {
+    background-color: #d32f2f;
+}
+
+.empty-state {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+    font-style: italic;
+}
+
+/* Welcome Banner */
+.welcome-banner {
+    background-color: #2d2d2d;
+    border: 2px solid #4CAF50;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 600px;
+    width: 90%;
+}
+
+.welcome-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.welcome-header h2 {
+    margin: 0;
+    color: #4CAF50;
+}
+
+.btn-dismiss {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.btn-dismiss:hover {
+    background-color: #444;
+    color: #fff;
+}
+
+.welcome-body {
+    margin: 15px 0;
+}
+
+.welcome-name {
+    margin-bottom: 20px;
+}
+
+.welcome-name label {
+    display: block;
+    margin-bottom: 5px;
+    color: #ccc;
+    font-size: 0.9em;
+}
+
+.welcome-name input {
+    width: 100%;
+    padding: 8px;
+    background-color: #1e1e1e;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.welcome-name input:focus {
+    outline: none;
+    border-color: #4CAF50;
+}
+
+.welcome-instructions {
+    background-color: #1e1e1e;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 15px 0;
+}
+
+.welcome-instructions p {
+    margin-top: 0;
+    color: #fff;
+    font-weight: bold;
+}
+
+.welcome-instructions ol {
+    margin: 10px 0;
+    padding-left: 20px;
+    color: #ccc;
+    line-height: 1.8;
+}
+
+.welcome-instructions li {
+    margin: 8px 0;
+}
+
+.btn-test {
+    background-color: #FF9800;
+    color: white;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-left: 5px;
+}
+
+.btn-test:hover {
+    background-color: #F57C00;
+}
+
+.welcome-footer {
+    margin-top: 15px;
+    text-align: right;
+}
+
+.welcome-footer .btn-primary {
+    padding: 10px 30px;
+}
