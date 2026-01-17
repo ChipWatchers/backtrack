@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Posture Snitch</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <h1>Posture Snitch Debug</h1>
+    <div id="container">
+        <!-- Video element for Person A to debug camera/pose -->
+        <video id="webcam" autoplay playsinline width="640" height="480"
+            style="transform: scaleX(-1); border: 2px solid red;"></video>
+        <canvas id="output_canvas" width="640" height="480"
+            style="position: absolute; left: 0; top: 0; pointer-events: none;"></canvas>
+    </div>
+
+    <!-- MediaPipe Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+
+    <!-- Main Entry Point -->
+    <script type="module" src="../app/main.js"></script>
+</body>
+
+</html>

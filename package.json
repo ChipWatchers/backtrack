@@ -1,0 +1,13 @@
+{
+    "name": "backtrack",
+    "version": "1.0.0",
+    "description": "Posture Snitch - Hack&Roll 2026",
+    "main": "app/main.js",
+    "scripts": {
+        "start": "npx serve ."
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {}
+}
