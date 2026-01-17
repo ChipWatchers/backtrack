@@ -6,4 +6,4 @@
  * Production: 'https://your-railway-app.app'
  */
 
-export const API_URL = 'http://localhost:3001';
+export const API_URL = 'https://backtrack-production-06ac.up.railway.app';
