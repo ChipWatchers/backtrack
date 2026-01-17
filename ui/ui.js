@@ -2,7 +2,7 @@
  * Friends Management UI
  */
 
-const API_BASE = 'http://localhost:3001';
+const API_BASE = 'https://backtrack-production-06ac.up.railway.app';
 
 // Generate or retrieve user ID from localStorage
 function getUserId() {
@@ -20,7 +20,7 @@ function getUserId() {
 document.addEventListener('DOMContentLoaded', () => {
   initializeOnboarding();
   initializeFriendsManagement();
-  
+
   // Debug: Add reset onboarding function to console (for testing)
   window.resetOnboarding = () => {
     localStorage.removeItem('postureSnitch_onboardingComplete');
@@ -33,14 +33,14 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeOnboarding() {
   // Check if onboarding already completed
   const onboardingComplete = localStorage.getItem('postureSnitch_onboardingComplete');
-  
+
   if (!onboardingComplete) {
     // Show welcome banner on first visit
     const welcomeBanner = document.getElementById('welcomeBanner');
     if (welcomeBanner) {
       welcomeBanner.style.display = 'block';
     }
-    
+
     // Load saved user name if exists
     const savedName = localStorage.getItem('postureSnitch_userName');
     const userNameInput = document.getElementById('userNameInput');
@@ -48,7 +48,7 @@ function initializeOnboarding() {
       userNameInput.value = savedName;
     }
   }
-  
+
   // Save user name when input changes
   const userNameInput = document.getElementById('userNameInput');
   if (userNameInput) {
@@ -61,7 +61,7 @@ function initializeOnboarding() {
       }
     });
   }
-  
+
   // Test Alert button
   const testAlertBtn = document.getElementById('testAlertBtn');
   if (testAlertBtn) {
@@ -75,7 +75,7 @@ function initializeOnboarding() {
           },
           body: JSON.stringify({ userId: userId || null })
         });
-        
+
         if (response.ok) {
           showSuccess('Test alert triggered! Check your console and wait 15s for AI response.');
         } else {
@@ -87,11 +87,11 @@ function initializeOnboarding() {
       }
     });
   }
-  
+
   // Dismiss banner
   const dismissBanner = document.getElementById('dismissBanner');
   const gotItBtn = document.getElementById('gotItBtn');
-  
+
   const hideBanner = () => {
     const welcomeBanner = document.getElementById('welcomeBanner');
     if (welcomeBanner) {
@@ -99,11 +99,11 @@ function initializeOnboarding() {
       localStorage.setItem('postureSnitch_onboardingComplete', 'true');
     }
   };
-  
+
   if (dismissBanner) {
     dismissBanner.addEventListener('click', hideBanner);
   }
-  
+
   if (gotItBtn) {
     gotItBtn.addEventListener('click', hideBanner);
   }
@@ -141,7 +141,7 @@ async function loadFriends() {
     const userId = getUserId();
     const response = await fetch(`${API_BASE}/friends?userId=${encodeURIComponent(userId)}`);
     const data = await response.json();
-    
+
     renderFriendsList(data.friends || []);
   } catch (error) {
     console.error('Failed to load friends:', error);
@@ -154,12 +154,12 @@ async function loadContacts() {
   try {
     const response = await fetch(`${API_BASE}/contacts`);
     const data = await response.json();
-    
+
     const dropdown = document.getElementById('contactsDropdown');
     if (dropdown) {
       // Clear existing options except first one
       dropdown.innerHTML = '<option value="">Select a contact...</option>';
-      
+
       // Add contacts
       (data.contacts || []).forEach(contact => {
         const option = document.createElement('option');
@@ -177,7 +177,7 @@ async function loadContacts() {
 function renderFriendsList(friends) {
   const friendsList = document.getElementById('friendsList');
   const noFriends = document.getElementById('noFriends');
-  
+
   if (!friendsList) return;
 
   if (friends.length === 0) {
@@ -214,12 +214,12 @@ function renderFriendsList(friends) {
 async function addFriend() {
   const dropdown = document.getElementById('contactsDropdown');
   const chatId = dropdown.value;
-  
+
   if (!chatId) {
     showError('Please select a contact from the dropdown');
     return;
   }
-  
+
   // Get name from selected option text
   const optionText = dropdown.options[dropdown.selectedIndex].textContent;
   const name = optionText.split(' (')[0]; // Extract name before the parentheses
@@ -239,7 +239,7 @@ async function addFriend() {
     if (response.ok) {
       // Clear form
       document.getElementById('contactsDropdown').value = '';
-      
+
       // Reload friends list
       loadFriends();
       showSuccess('Guardian added successfully!');
@@ -253,7 +253,7 @@ async function addFriend() {
 }
 
 // Toggle friend enabled/disabled
-window.toggleFriend = async function(chatId, enabled) {
+window.toggleFriend = async function (chatId, enabled) {
   try {
     const userId = getUserId();
     const response = await fetch(`${API_BASE}/friends/${chatId}/toggle?userId=${encodeURIComponent(userId)}`, {
@@ -276,7 +276,7 @@ window.toggleFriend = async function(chatId, enabled) {
 };
 
 // Delete friend
-window.deleteFriend = async function(chatId) {
+window.deleteFriend = async function (chatId) {
   if (!confirm('Are you sure you want to remove this guardian?')) {
     return;
   }
