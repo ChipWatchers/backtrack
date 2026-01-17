@@ -12,7 +12,7 @@ async function generatePostureInsult() {
     try {
       const secretsContent = fs.readFileSync(secretsPath, 'utf8');
       const secrets = {};
-      
+
       secretsContent.split('\n').forEach(line => {
         const trimmed = line.trim();
         if (trimmed && !trimmed.startsWith('#')) {
@@ -22,14 +22,19 @@ async function generatePostureInsult() {
           }
         }
       });
-      
+
       return secrets;
     } catch (error) {
       throw new Error('Failed to load secrets.env: ' + error.message);
     }
   }
 
-  const { GEMINI_API_KEY } = loadSecrets();
+  let secrets = {};
+  try {
+    secrets = loadSecrets();
+  } catch (e) { /* ignore if file missing on railway */ }
+
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY || secrets.GEMINI_API_KEY;
 
   if (!GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY not found in config/secrets.env');
@@ -41,7 +46,7 @@ async function generatePostureInsult() {
     // Use v1 API with gemini-2.5-flash (confirmed available from API)
     // Model format: models/gemini-2.5-flash
     const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -63,7 +68,7 @@ async function generatePostureInsult() {
     }
 
     const insult = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    
+
     if (!insult) {
       throw new Error('No insult generated from Gemini API');
     }
