@@ -3,6 +3,21 @@
         {
             "source": "/",
             "destination": "/ui/index.html"
+<<<<<<< HEAD
+=======
+        },
+        {
+            "source": "/styles.css",
+            "destination": "/ui/styles.css"
+        },
+        {
+            "source": "/ui.js",
+            "destination": "/ui/ui.js"
+        },
+        {
+            "source": "/app/(.*)",
+            "destination": "/app/$1"
+>>>>>>> main
         }
     ]
 }
