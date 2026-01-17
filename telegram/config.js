@@ -25,12 +25,7 @@ function loadSecrets() {
     }
 }
 
-const secrets = loadSecrets();
-const BOT_TOKEN = process.env.BOT_TOKEN || secrets.BOT_TOKEN;
-
-if (!BOT_TOKEN) {
-    console.error("❌ CRITICAL ERROR: BOT_TOKEN is missing! (Not in env var and not in secrets.env)");
-}
+const { BOT_TOKEN } = loadSecrets();
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 module.exports = {

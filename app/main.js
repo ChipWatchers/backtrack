@@ -66,11 +66,8 @@ async function onPoseResults(results) {
     }
 }
 
-import { API_URL } from './config.js';
-
 async function init() {
     console.log("Initializing Posture Snitch...");
-    console.log("Backend API:", API_URL);
 
     // Request Notification permission
     if (Notification.permission !== "granted") {
