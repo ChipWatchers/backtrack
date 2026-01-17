@@ -20,7 +20,8 @@ function loadSecrets() {
 
         return secrets;
     } catch (e) {
-        console.error("Could not load secrets.env", e);
+        // This is expected on Railway/Production where we use environment variables
+        // console.log("Using environment variables (secrets.env not found)");
         return {};
     }
 }
