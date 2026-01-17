@@ -32,6 +32,58 @@ function loadSecrets() {
 }
 
 /**
+ * Generate audio stream (Buffer) from ElevenLabs API
+ * @param {string} text - The text to speak
+ * @param {string} voiceId - ElevenLabs voice ID
+ * @returns {Promise<Buffer>} - Audio buffer
+ */
+async function generateAudioStream(text, voiceId) {
+  if (!text || typeof text !== 'string' || !text.trim()) {
+    throw new Error('Empty or invalid text provided');
+  }
+
+  if (!voiceId) {
+    throw new Error('Voice ID is required for ElevenLabs generation');
+  }
+
+  const secrets = loadSecrets();
+  const ELEVENLABS_API_KEY = secrets.ELEVENLABS_API_KEY;
+
+  if (!ELEVENLABS_API_KEY) {
+    throw new Error('ELEVENLABS_API_KEY not found in secrets');
+  }
+
+  // Call ElevenLabs API
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Accept': 'audio/mpeg',
+      'Content-Type': 'application/json',
+      'xi-api-key': ELEVENLABS_API_KEY
+    },
+    body: JSON.stringify({
+      text: text,
+      model_id: 'eleven_multilingual_v2',
+      voice_settings: {
+        stability: 0.5,
+        similarity_boost: 0.75
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`ElevenLabs API error: ${errorData.detail?.message || response.statusText || 'Unknown error'}`);
+  }
+
+  // Get audio buffer
+  const audioBuffer = await response.arrayBuffer();
+  return Buffer.from(audioBuffer);
+}
+
+/**
  * Play text as audio using ElevenLabs API or macOS 'say' command as fallback
  * @param {string} text - The text to speak
  * @param {string} voiceId - Optional ElevenLabs voice ID. If provided, uses ElevenLabs API, otherwise falls back to 'say' command
@@ -52,42 +104,7 @@ async function playAudio(text, voiceId = null) {
   // If voiceId is provided, use ElevenLabs API
   if (voiceId) {
     try {
-      const secrets = loadSecrets();
-      const ELEVENLABS_API_KEY = secrets.ELEVENLABS_API_KEY;
-
-      if (!ELEVENLABS_API_KEY) {
-        console.warn('⚠️  ELEVENLABS_API_KEY not found, falling back to say command');
-        return await playAudioWithSay(text);
-      }
-
-      // Call ElevenLabs API
-      const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Accept': 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': ELEVENLABS_API_KEY
-        },
-        body: JSON.stringify({
-          text: text,
-          model_id: 'eleven_multilingual_v2',
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75
-          }
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`ElevenLabs API error: ${errorData.detail?.message || response.statusText || 'Unknown error'}`);
-      }
-
-      // Get audio buffer
-      const audioBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(audioBuffer);
+      const buffer = await generateAudioStream(text, voiceId);
 
       // Save to temporary file
       const tempDir = os.tmpdir();
@@ -148,5 +165,9 @@ async function playAudioWithSay(text) {
 }
 
 module.exports = {
-  playAudio
+  playAudio,
+  playAudioWithSay,
+  generateAudioStream
+};
+playAudio
 };

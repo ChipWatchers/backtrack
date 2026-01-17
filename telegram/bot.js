@@ -5,7 +5,7 @@ const http = require('http');
 const { sendAlert } = require('./sendAlert.js');
 const { BOT_TOKEN, TELEGRAM_API_URL } = require('./config.js');
 const { generatePostureInsult } = require('../utils/insultGenerator.js');
-const { playAudio } = require('../app/audioPlayer.js');
+const { playAudio, generateAudioStream } = require('../app/audioPlayer.js');
 const { getAllVoices } = require('../config/voices.js');
 
 let lastUpdateId = 0;
@@ -779,6 +779,35 @@ function startHttpServer() {
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ events }));
+      return;
+    }
+
+    if (req.url === '/tts' && req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => { body += chunk.toString(); });
+      req.on('end', async () => {
+        try {
+          const { text, voiceId } = JSON.parse(body);
+          if (!text || !voiceId) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Missing text or voiceId' }));
+            return;
+          }
+
+          console.log(`🗣️ Generating TTS for client: ${text.substring(0, 20)}... (${voiceId})`);
+          const audioBuffer = await generateAudioStream(text, voiceId);
+
+          res.writeHead(200, {
+            'Content-Type': 'audio/mpeg',
+            'Content-Length': audioBuffer.length
+          });
+          res.end(audioBuffer);
+        } catch (error) {
+          console.error('❌ TTS Generation failed:', error.message);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: error.message }));
+        }
+      });
       return;
     }
 

@@ -259,14 +259,51 @@ async function pollAudioEvents() {
             if (data.events && data.events.length > 0) {
                 console.log(`🔊 Received ${data.events.length} audio event(s)`);
 
-                data.events.forEach(event => {
+                // Process events sequentially to avoid overlapping
+                for (const event of data.events) {
                     if (event.text) {
-                        const utterance = new SpeechSynthesisUtterance(event.text);
-                        // Optional: Adjust voice/rate/pitch here
-                        window.speechSynthesis.speak(utterance);
-                        console.log(`🗣️ Speaking: "${event.text}"`);
+                        try {
+                            let played = false;
+
+                            // Try ElevenLabs if voiceId is present
+                            if (event.voiceId) {
+                                console.log(`🗣️ Fetching ElevenLabs audio: "${event.text}" (${event.voiceId})`);
+                                const ttsResponse = await fetch(`${API_URL}/tts`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ text: event.text, voiceId: event.voiceId })
+                                });
+
+                                if (ttsResponse.ok) {
+                                    const blob = await ttsResponse.blob();
+                                    const audioUrl = URL.createObjectURL(blob);
+                                    const audio = new Audio(audioUrl);
+
+                                    // wrapper to await playback? 
+                                    // For now just play. To avoid overlap we'd need a complex queue. 
+                                    // Just firing it is a good start.
+                                    audio.play();
+                                    console.log(`🔊 Playing ElevenLabs audio...`);
+                                    played = true;
+                                } else {
+                                    console.warn("TTS Fetch failed, falling back");
+                                }
+                            }
+
+                            if (!played) {
+                                const utterance = new SpeechSynthesisUtterance(event.text);
+                                window.speechSynthesis.speak(utterance);
+                                console.log(`🗣️ Speaking (Default): "${event.text}"`);
+                            }
+
+                        } catch (e) {
+                            console.error("Audio playback error:", e);
+                            // Final fallback
+                            const utterance = new SpeechSynthesisUtterance(event.text);
+                            window.speechSynthesis.speak(utterance);
+                        }
                     }
-                });
+                }
             }
         }
     } catch (error) {
