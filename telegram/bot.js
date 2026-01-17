@@ -392,28 +392,7 @@ async function pollUpdates() {
                 voiceId: guardianVoiceId // Store voiceId so we can play it with that voice
               });
 
-              console.log(`📝 Processing ${responses.length} response(s) with voice playback`);
-
-              // Queue each response individually so the client can play them with correct voices
-              for (const response of responses) {
-                const voiceId = response.voiceId || null;
-                const formattedText = `${response.name} says ${response.text}`;
-
-                // Logic from HEAD was to play locally. Logic from Main is to queue.
-                // We queue it for the client.
-                audioQueue.push({
-                  text: formattedText,
-                  originalText: response.text, // raw text
-                  name: response.name,
-                  voiceId: voiceId, // Pass voiceId to client!
-                  timestamp: Date.now(),
-                  type: 'reply'
-                });
-
-                console.log(`🔊 Queued response from ${response.name}${voiceId ? ` with voice ${voiceId}` : ' (default voice)'}`);
-              }
-
-              console.log(`✅ Queued all ${responses.length} response(s) for client playback`);
+              console.log(`📝 stored response from ${friendName} (Voice: ${guardianVoiceId || 'default'}). Waiting for consolidation timer...`);
 
               // Mark that a friend replied - this prevents AI insult from playing
               activeAlertSession.aiInsultCancelled = true;
