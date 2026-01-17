@@ -51,15 +51,18 @@ async function onPoseResults(results) {
                 }
 
                 // 2. Telegram Bot Trigger
-                fetch('http://localhost:3001/trigger', { method: 'POST' })
+                fetch(`${API_URL}/trigger`, { method: 'POST' })
                     .catch(e => console.error("Failed to trigger bot:", e));
             });
         }
     }
 }
 
+import { API_URL } from './config.js';
+
 async function init() {
     console.log("Initializing Posture Snitch...");
+    console.log("Backend API:", API_URL);
 
     // Request Notification permission
     if (Notification.permission !== "granted") {
