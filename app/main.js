@@ -6,6 +6,7 @@ import { getVideoStream } from './webcam.js';
 import { initPoseDetector, sendFrame } from './poseDetector.js';
 import { getPostureState, calibrate } from './postureEngine.js';
 import { processPostureState } from './triggerEngine.js';
+import { API_URL } from './config.js';
 
 // Simple state to track if we have calibrated
 let isCalibrated = false;
