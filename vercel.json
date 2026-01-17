@@ -3,8 +3,6 @@
         {
             "source": "/",
             "destination": "/ui/index.html"
-<<<<<<< HEAD
-=======
         },
         {
             "source": "/styles.css",
@@ -17,7 +15,6 @@
         {
             "source": "/app/(.*)",
             "destination": "/app/$1"
->>>>>>> main
         }
     ]
 }
