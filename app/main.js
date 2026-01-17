@@ -31,6 +31,7 @@ async function onPoseResults(results) {
             isCalibrated = true;
             window.shouldCalibrateNextFrame = false; // Reset flag
             console.log("Calibration complete!");
+            if (window.onCalibrationComplete) window.onCalibrationComplete();
         }
 
         if (isCalibrated) {
@@ -39,8 +40,17 @@ async function onPoseResults(results) {
 
             processPostureState(state, () => {
                 // TRIGGER HAPPENED
-                alert("⚠️ SLOUCH DETECTED! (Person A Logic fired)");
-                // In real app, call telegram bot here
+                console.log("⚠️ SLOUCH DETECTED!");
+
+                if (Notification.permission === "granted") {
+                    const n = new Notification("⚠️ SLOUCH DETECTED!", {
+                        body: "Sit up straight!",
+                        silent: false // Try to make sound if possible (browser dependent)
+                    });
+                } else {
+                    // Fallback
+                    alert("⚠️ SLOUCH DETECTED!");
+                }
             });
         }
     }
@@ -48,6 +58,11 @@ async function onPoseResults(results) {
 
 async function init() {
     console.log("Initializing Posture Snitch...");
+
+    // Request Notification permission
+    if (Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
 
     try {
         const videoElement = document.getElementById('webcam');
@@ -89,12 +104,25 @@ async function init() {
             }, 3000);
         };
 
-        // Actually simplest hack:
-        document.body.addEventListener('click', () => {
-            // Toggle calibration on click for now
-            console.log("Calibration requested for next frame.");
+        // Wire up Calibrate Button
+        const calibrateBtn = document.getElementById('calibrateBtn');
+        const statusText = document.getElementById('status');
+
+        calibrateBtn.addEventListener('click', () => {
+            console.log("Calibration requested...");
+            statusText.innerText = "Status: Calibrating... Sit up straight!";
+            statusText.style.color = "yellow";
+
+            // Trigger next frame calibration
             window.shouldCalibrateNextFrame = true;
         });
+
+        // Listen for calibration completion event (we can emit this or just use a callback, 
+        // but since we are in main.js, we can patch the onPoseResults logic to update UI)
+        window.onCalibrationComplete = () => {
+            statusText.innerText = "Status: Posture Locked & Monitoring ✅";
+            statusText.style.color = "#4CAF50";
+        };
 
     } catch (err) {
         console.error("Initialization failed:", err);

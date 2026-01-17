@@ -3,35 +3,52 @@
  * Responsibility: Math & Geometry for posture
  */
 
-let calibratedShoulderY = null;
-let calibratedNoseY = null;
-const SLOUCH_THRESHOLD = 0.05; // 5% of screen height variance? Tweak this.
+let calibratedRatio = null;
+const SLOUCH_TOLERANCE = 0.15; // 15% deviation from baseline allowed
+
+/**
+ * Calculates a normalized score for "Neck Length".
+ * Score = (Average Shoulder Y - Nose Y) / (Distance between Shoulders)
+ * 
+ * Why this works:
+ * - If you move back/forth, both numerator and denominator scale equally -> Ratio stays constant.
+ * - If you slouch, your head drops (numerator shrinks), but shoulder width stays roughly same -> Ratio drops.
+ */
+function calculatePostureRatio(landmarks) {
+    const nose = landmarks[0];
+    const leftShoulder = landmarks[11];
+    const rightShoulder = landmarks[12];
+
+    const shoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+    const neckLength = Math.abs(shoulderY - nose.y); // Vertical distance
+
+    const shoulderDistX = leftShoulder.x - rightShoulder.x;
+    const shoulderDistY = leftShoulder.y - rightShoulder.y;
+    const shoulderWidth = Math.sqrt(shoulderDistX * shoulderDistX + shoulderDistY * shoulderDistY);
+
+    if (shoulderWidth === 0) return 0; // Safety
+
+    return neckLength / shoulderWidth;
+}
 
 export function calibrate(landmarks) {
     if (!landmarks) return;
 
-    // Landmarks: 11 (left shoulder), 12 (right shoulder), 0 (nose)
-    const leftShoulder = landmarks[11];
-    const rightShoulder = landmarks[12];
-    const nose = landmarks[0];
+    calibratedRatio = calculatePostureRatio(landmarks);
 
-    calibratedShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
-    calibratedNoseY = nose.y;
-
-    console.log("Calibrated! Baseline Shoulder Y:", calibratedShoulderY);
+    console.log("Calibrated! Baseline Ratio:", calibratedRatio.toFixed(3));
 }
 
 export function getPostureState(landmarks) {
-    if (!calibratedShoulderY || !landmarks) return "unknown";
+    if (!calibratedRatio || !landmarks) return "unknown";
 
-    const leftShoulder = landmarks[11];
-    const rightShoulder = landmarks[12];
-    const currentShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+    const currentRatio = calculatePostureRatio(landmarks);
 
-    // In computer vision (usually), Y increases downwards.
-    // So if currentShoulderY is GREATER than calibratedShoulderY + threshold, they moved DOWN (slouched/sunk).
+    // If current ratio is significantly SMALLER than calibrated, 
+    // it means neck length (numerator) has decreased relative to width.
+    // e.g. Head drooping forward = slouch.
 
-    if (currentShoulderY > calibratedShoulderY + SLOUCH_THRESHOLD) {
+    if (currentRatio < calibratedRatio * (1 - SLOUCH_TOLERANCE)) {
         return "slouching";
     }
 

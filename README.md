@@ -27,6 +27,10 @@ Since we are using modern ES Modules, you need a local web server to run this (o
    - After 2 seconds, you should see an alert: `⚠️ SLOUCH DETECTED!`.
 6. Sit up straight again to reset the trigger.
 
+> [!IMPORTANT]
+> **Demo Tip**: Browsers pause `requestAnimationFrame` (the loop that runs detection) when you switch to a different TAB to save battery.
+> To keep it running while you work on other things, **drag the tab out into its own separate window**. As long as that window is not minimized (it can be behind other windows), it will keep running.
+
 ## 📁 Structure
 
 See `app/` for the logic implemented by Person A:

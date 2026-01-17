@@ -18,6 +18,11 @@
             style="position: absolute; left: 0; top: 0; pointer-events: none;"></canvas>
     </div>
 
+    <div id="controls" style="margin-top: 10px; text-align: center;">
+        <button id="calibrateBtn" style="background-color: #2196F3;">🎯 Calibrate Posture</button>
+        <p id="status" style="font-size: 1.2em; font-weight: bold; color: #ccc;">Status: Waiting...</p>
+    </div>
+
     <!-- MediaPipe Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
