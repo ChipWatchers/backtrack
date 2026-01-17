@@ -789,11 +789,8 @@ function startHttpServer() {
       let userId = null;
       let body = '';
 
-<<<<<<< HEAD
       let userName = null;
       let voiceId = 'FRzaj7L4px15biN0RGSj'; // Default fallback
-=======
->>>>>>> main
       await new Promise((resolve) => {
         req.on('data', chunk => { body += chunk.toString(); });
         req.on('end', () => {
@@ -837,7 +834,6 @@ function startHttpServer() {
       const enabledFriends = friends.filter(f => f.enabled !== false);
       console.log(`📋 Sending alerts to ${enabledFriends.length} enabled friend(s) out of ${friends.length} total friend(s)`);
 
-<<<<<<< HEAD
       // If no friends to alert, generate and play AI insult immediately (no waiting)
       if (enabledFriends.length === 0) {
         console.log('ℹ️  No friends to alert - generating AI insult immediately');
@@ -851,8 +847,16 @@ function startHttpServer() {
           console.log(`🎭 Generating insult with voiceId: ${voiceId}`);
           const insultResult = await generatePostureInsult(voiceId);
           console.log(`🎭 Generated insult with voiceId: ${insultResult.voiceId}, voiceName: ${insultResult.voiceName}`);
-          await playAudio(insultResult.text, insultResult.voiceId);
-          console.log(`🤖 AI insult played (no friends scenario) - Voice: ${insultResult.voiceName}`);
+
+          // Queue for client playback (Server cannot play audio)
+          audioQueue.push({
+            text: insultResult.text,
+            voiceId: insultResult.voiceId,
+            timestamp: Date.now(),
+            type: 'insult'
+          });
+
+          console.log(`🤖 AI insult queued (no friends scenario) - Voice: ${insultResult.voiceName}`);
         } catch (error) {
           console.error('❌ Failed to generate/play AI insult:', error.message);
         }
@@ -864,9 +868,6 @@ function startHttpServer() {
       const alertMessage = userName && userName.trim()
         ? `🚨 ${userName} is slouching! Tell them to GET UP and straighten out RIGHT NOW or prepare for absolute verbal annihilation! No mercy! 💀`
         : '🚨 Someone is slouching! Tell them to GET UP and straighten out RIGHT NOW or prepare for absolute verbal annihilation! No mercy! 💀';
-=======
-      const alertMessage = '🚨 Posture Alert: You are slouching! Sit up straight!';
->>>>>>> main
 
       // Cancel any existing alert session
       if (activeAlertSession && activeAlertSession.timerId) {
@@ -926,15 +927,11 @@ function startHttpServer() {
         console.log(`⏰ No replies from any friends within 15s, generating insult...`);
 
         try {
-<<<<<<< HEAD
           // Get voiceId - use user's default (guardian's selection only applies to their typed/generated messages)
           const sessionVoiceId = sessionRef.voiceId || null;
           console.log(`🎭 Generating timeout AI insult with user-selected voiceId: ${sessionVoiceId}`);
           const insultResult = await generatePostureInsult(sessionVoiceId);
           console.log(`🎭 Generated insult with voiceId: ${insultResult.voiceId}, voiceName: ${insultResult.voiceName}`);
-=======
-          const insult = await generatePostureInsult();
->>>>>>> main
 
           // Final check before playing
           if (activeAlertSession !== sessionRef || sessionRef.aiInsultCancelled || sessionRef.responses.size > 0) {
@@ -942,17 +939,15 @@ function startHttpServer() {
             return;
           }
 
-<<<<<<< HEAD
-          // Play the insult as audio with personality voice
-          await playAudio(insultResult.text, insultResult.voiceId);
-
-          console.log(`🔊 Played fallback insult (${insultResult.voiceName}): "${insultResult.text}"`);
-=======
           // Queue the insult for client playback
-          audioQueue.push({ text: insult, timestamp: Date.now(), type: 'insult' });
+          audioQueue.push({
+            text: insultResult.text,
+            voiceId: insultResult.voiceId,
+            timestamp: Date.now(),
+            type: 'insult'
+          });
 
-          console.log(`🔊 Queued fallback insult: "${insult}"`);
->>>>>>> main
+          console.log(`🔊 Queued fallback insult (${insultResult.voiceName}): "${insultResult.text}"`);
         } catch (error) {
           console.error(`❌ Failed to generate/play insult:`, error.message);
         }
