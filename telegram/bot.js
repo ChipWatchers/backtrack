@@ -6,12 +6,13 @@ const { sendAlert } = require('./sendAlert.js');
 const { BOT_TOKEN, TELEGRAM_API_URL } = require('./config.js');
 const { generatePostureInsult } = require('../utils/insultGenerator.js');
 const { playAudio } = require('../app/audioPlayer.js');
+const { getAllVoices } = require('../config/voices.js');
 
 let lastUpdateId = 0;
 let messagesReceived = 0;
 
 // Track active alert session (one per trigger)
-let activeAlertSession = null; // { timerId, responses: Map<chatId, {name, text}>, enabledFriends: [] }
+let activeAlertSession = null; // { timerId, responses: Map<chatId, {name, text, voiceId}>, enabledFriends: [], guardianPersonalities: Map<chatId, voiceId> }
 
 // Track contacts who have messaged the bot (for auto-detection)
 const detectedContacts = new Map(); // chatId -> { chatId, username, firstName }
@@ -61,6 +62,43 @@ async function deleteWebhook() {
 }
 
 /**
+ * Generate inline keyboard with personality selection buttons
+ * @returns {Object} Inline keyboard markup for Telegram
+ */
+function generatePersonalityKeyboard() {
+  const voices = getAllVoices();
+  const buttons = [];
+
+  // Create buttons in rows of 2
+  for (let i = 0; i < voices.length; i += 2) {
+    const row = [];
+    row.push({
+      text: voices[i].name,
+      callback_data: `personality_${voices[i].id}`
+    });
+    if (i + 1 < voices.length) {
+      row.push({
+        text: voices[i + 1].name,
+        callback_data: `personality_${voices[i + 1].id}`
+      });
+    }
+    buttons.push(row);
+  }
+
+  // Add "Generate AI Roast" button on a separate row
+  buttons.push([
+    {
+      text: '🎭 Generate AI Roast',
+      callback_data: 'generate_ai_roast'
+    }
+  ]);
+
+  return {
+    inline_keyboard: buttons
+  };
+}
+
+/**
  * Poll Telegram for new updates
  * Uses getUpdates method with long polling
  */
@@ -85,6 +123,204 @@ async function pollUpdates() {
         // Update the last processed update ID
         lastUpdateId = update.update_id;
 
+        // Handle callback queries (button clicks)
+        if (update.callback_query) {
+          const callbackQuery = update.callback_query;
+          const chatId = callbackQuery.message.chat.id;
+          const data = callbackQuery.data;
+          const from = callbackQuery.from;
+
+          // Handle personality selection
+          if (data && data.startsWith('personality_')) {
+            const voiceId = data.replace('personality_', '');
+            
+            // Find the voice name
+            const voices = getAllVoices();
+            const selectedVoice = voices.find(v => v.id === voiceId);
+            const voiceName = selectedVoice ? selectedVoice.name : 'Unknown';
+
+            // Check if this is from an enabled friend in the active alert session
+            if (activeAlertSession) {
+              const friend = activeAlertSession.enabledFriends.find(f => f.chatId === chatId);
+              
+              if (friend) {
+                // Store guardian's personality selection per guardian (Map: chatId -> voiceId)
+                if (!activeAlertSession.guardianPersonalities) {
+                  activeAlertSession.guardianPersonalities = new Map();
+                }
+                activeAlertSession.guardianPersonalities.set(chatId, voiceId);
+                console.log(`🎭 Guardian ${friend.name} (${chatId}) selected personality: ${voiceName} (${voiceId})`);
+                
+                // Answer the callback query (removes loading state)
+                try {
+                  await fetch(`${TELEGRAM_API_URL}/answerCallbackQuery`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      callback_query_id: callbackQuery.id,
+                      text: `✅ ${voiceName} selected!`,
+                      show_alert: false
+                    })
+                  });
+
+                  // Edit the message to show selection (optional)
+                  await fetch(`${TELEGRAM_API_URL}/editMessageText`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      chat_id: chatId,
+                      message_id: callbackQuery.message.message_id,
+                      text: callbackQuery.message.text + `\n\n✅ ${friend.name} selected: ${voiceName}`,
+                      reply_markup: callbackQuery.message.reply_markup // Keep buttons
+                    })
+                  });
+                } catch (error) {
+                  console.error('❌ Error answering callback query:', error.message);
+                }
+              } else {
+                // Not a friend - ignore
+                await fetch(`${TELEGRAM_API_URL}/answerCallbackQuery`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    callback_query_id: callbackQuery.id,
+                    text: 'You are not authorized to select personality',
+                    show_alert: true
+                  })
+                });
+              }
+            } else {
+              // No active alert session
+              await fetch(`${TELEGRAM_API_URL}/answerCallbackQuery`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  callback_query_id: callbackQuery.id,
+                  text: 'No active slouch alert',
+                  show_alert: true
+                })
+              });
+            }
+          }
+
+          // Handle "Generate AI Roast" button click
+          if (data === 'generate_ai_roast') {
+            // Check if this is from an enabled friend in the active alert session
+            if (activeAlertSession) {
+              const friend = activeAlertSession.enabledFriends.find(f => f.chatId === chatId);
+              
+              if (friend) {
+                // Answer callback query immediately (show loading)
+                try {
+                  await fetch(`${TELEGRAM_API_URL}/answerCallbackQuery`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      callback_query_id: callbackQuery.id,
+                      text: 'Generating AI roast...',
+                      show_alert: false
+                    })
+                  });
+                } catch (error) {
+                  console.error('❌ Error answering callback query:', error.message);
+                }
+
+                // Determine which personality to use: guardian's selection or user's default
+                const guardianVoiceId = activeAlertSession.guardianPersonalities?.get(chatId) || null;
+                const voiceIdToUse = guardianVoiceId || activeAlertSession.voiceId || 'FRzaj7L4px15biN0RGSj';
+                const personalitySource = guardianVoiceId ? 'guardian-selected' : 'user-default';
+                
+                console.log(`🎭 Guardian ${friend.name} (${chatId}) generating AI roast with ${personalitySource} personality: ${voiceIdToUse}`);
+
+                // Generate AI insult
+                try {
+                  const insultResult = await generatePostureInsult(voiceIdToUse);
+                  const generatedText = insultResult.text;
+                  
+                  console.log(`🤖 Generated AI roast for ${friend.name}: "${generatedText}"`);
+
+                  // Simulate guardian reply by adding to activeAlertSession.responses with voiceId
+                  if (!activeAlertSession.responses.has(chatId)) {
+                    activeAlertSession.responses.set(chatId, {
+                      name: friend.name,
+                      text: generatedText,
+                      voiceId: voiceIdToUse // Store voiceId so we can play it with that voice
+                    });
+
+                    // Mark that a friend replied - this prevents AI insult from playing
+                    activeAlertSession.aiInsultCancelled = true;
+
+                    console.log(`✅ AI roast added as ${friend.name}'s reply`);
+
+                    // Cancel the AI insult timer if it exists
+                    if (activeAlertSession.timerId) {
+                      clearTimeout(activeAlertSession.timerId);
+                      activeAlertSession.timerId = null;
+                      console.log(`⏰ Cancelled timeout AI insult - guardian generated roast instead`);
+                    }
+
+                    // Start collection timer to gather more responses if needed
+                    if (!activeAlertSession.collectionTimerId && activeAlertSession.enabledFriends.length > 1) {
+                      activeAlertSession.collectionTimerId = setTimeout(async () => {
+                        await processFriendResponses(activeAlertSession);
+                        if (activeAlertSession === activeAlertSession) {
+                          activeAlertSession = null;
+                        }
+                      }, 3000); // Wait 3 more seconds for other friends to reply
+                      console.log(`⏱️  Started 3s collection timer for other friends`);
+                    } else if (activeAlertSession.enabledFriends.length === 1) {
+                      // Only one friend - play immediately
+                      await processFriendResponses(activeAlertSession);
+                      activeAlertSession = null;
+                    }
+
+                    // Send confirmation message to guardian
+                    try {
+                      await sendAlert(chatId, `✅ AI Roast generated and sent!\n\n"${generatedText}"`);
+                    } catch (error) {
+                      console.error('❌ Failed to send confirmation to guardian:', error.message);
+                    }
+                  } else {
+                    console.log(`⚠️  ${friend.name} already replied - not adding generated roast`);
+                    await sendAlert(chatId, '⚠️ You already sent a message. The generated roast was not added.');
+                  }
+                } catch (error) {
+                  console.error(`❌ Failed to generate AI roast for ${friend.name}:`, error.message);
+                  try {
+                    await sendAlert(chatId, `❌ Failed to generate AI roast: ${error.message}`);
+                  } catch (sendError) {
+                    console.error('❌ Failed to send error message to guardian:', sendError.message);
+                  }
+                }
+              } else {
+                // Not a friend - ignore
+                await fetch(`${TELEGRAM_API_URL}/answerCallbackQuery`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    callback_query_id: callbackQuery.id,
+                    text: 'You are not authorized to generate roasts',
+                    show_alert: true
+                  })
+                });
+              }
+            } else {
+              // No active alert session
+              await fetch(`${TELEGRAM_API_URL}/answerCallbackQuery`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  callback_query_id: callbackQuery.id,
+                  text: 'No active slouch alert',
+                  show_alert: true
+                })
+              });
+            }
+          }
+
+          continue; // Skip to next update
+        }
+
         // Log incoming messages
         if (update.message) {
           messagesReceived++;
@@ -93,62 +329,84 @@ async function pollUpdates() {
           const text = update.message.text || '(no text)';
 
           console.log(`[${new Date().toISOString()}] Message from @${username} (${chatId}): ${text}`);
-          
-          // Track contact for auto-detection
-          detectedContacts.set(chatId, {
-            chatId: chatId,
-            username: update.message.from.username || null,
-            firstName: update.message.from.first_name || 'Unknown',
-            lastName: update.message.from.last_name || null
-          });
-          
-          // Auto-add friend when they message /start or start
+
+          // Handle /start command with optional parameter
           const normalizedText = text.toLowerCase().trim();
-          if (normalizedText === '/start' || normalizedText === 'start' || normalizedText === 'hi' || normalizedText === 'hello') {
-            autoAddFriend(chatId, update.message.from);
+          if (normalizedText.startsWith('/start') || normalizedText === 'start') {
+            // Extract userId parameter from /start command
+            // Format: /start USER_A_ID or /start USER_A_ID (Telegram sends it as part of text)
+            let userId = null;
+
+            if (normalizedText.startsWith('/start ')) {
+              // Extract parameter after /start
+              const match = text.match(/^\/start\s+(.+)$/i);
+              if (match && match[1]) {
+                userId = decodeURIComponent(match[1].trim());
+                console.log(`🔗 Start command received with userId parameter: ${userId}`);
+              }
+            }
+
+            // If userId parameter exists, add friend to that specific user's list
+            if (userId) {
+              autoAddFriendForUser(chatId, update.message.from, userId);
+            } else {
+              // No parameter - just show welcome message (backwards compatibility)
+              console.log(`ℹ️  Generic /start received (no userId parameter) - friend not auto-added`);
+            }
+          } else {
+            // Track contact info when they message (for display purposes)
+            // This stores contact info, but contacts only appear in dropdown if they're in user's friend list
+            detectedContacts.set(chatId, {
+              chatId: chatId,
+              username: update.message.from.username || null,
+              firstName: update.message.from.first_name || 'Unknown',
+              lastName: update.message.from.last_name || null
+            });
           }
         }
       }
 
       // Process replies through callback system
       processReplies(data.result);
-      
+
       // Check if any replies are for the active alert session
       if (activeAlertSession) {
         for (const update of data.result) {
           if (update.message) {
             const chatId = update.message.chat.id;
             const text = update.message.text || '';
-            
+
             // Check if this is a reply from one of the enabled friends
             const friend = activeAlertSession.enabledFriends.find(f => f.chatId === chatId);
-            
+
             if (text.trim() && friend && !activeAlertSession.responses.has(chatId)) {
-              // Store the response
+              // Store the response with guardian's selected personality voiceId (if any)
               const friendName = friend.name;
+              const guardianVoiceId = activeAlertSession.guardianPersonalities?.get(chatId) || null;
               activeAlertSession.responses.set(chatId, {
                 name: friendName,
-                text: text.trim()
+                text: text.trim(),
+                voiceId: guardianVoiceId // Store voiceId so we can play it with that voice
               });
-              
-              console.log(`📨 Reply received from ${friendName} (${chatId}): ${text}`);
-              
+
+              console.log(`📨 Reply received from ${friendName} (${chatId}): ${text}${guardianVoiceId ? ` [Voice: ${guardianVoiceId}]` : ''}`);
+
               // Mark that a friend replied - this prevents AI insult from playing
               activeAlertSession.aiInsultCancelled = true;
-              
+
               // If any friend replied, cancel the AI insult timer immediately
               if (activeAlertSession.timerId) {
                 clearTimeout(activeAlertSession.timerId);
                 activeAlertSession.timerId = null;
                 console.log(`✅ AI insult cancelled - friend replied within 15s`);
               }
-              
+
               // Wait 3 more seconds to collect other responses, then collate all
               // Clear any existing collection timer first
               if (activeAlertSession.collectionTimerId) {
                 clearTimeout(activeAlertSession.collectionTimerId);
               }
-              
+
               activeAlertSession.collectionTimerId = setTimeout(() => {
                 processFriendResponses(activeAlertSession);
                 activeAlertSession = null;
@@ -202,10 +460,10 @@ if (require.main === module) {
 
 function loadFriends(userId) {
   // If no userId provided, use default friends.json (backwards compatibility)
-  const friendsPath = userId 
+  const friendsPath = userId
     ? path.join(__dirname, `../config/friends_${userId}.json`)
     : path.join(__dirname, '../config/friends.json');
-  
+
   try {
     if (!fs.existsSync(friendsPath)) {
       // File doesn't exist yet - return empty array
@@ -226,10 +484,10 @@ function loadFriends(userId) {
 
 function saveFriends(friends, userId) {
   // If no userId provided, use default friends.json (backwards compatibility)
-  const friendsPath = userId 
+  const friendsPath = userId
     ? path.join(__dirname, `../config/friends_${userId}.json`)
     : path.join(__dirname, '../config/friends.json');
-  
+
   try {
     const config = { friends: friends };
     fs.writeFileSync(friendsPath, JSON.stringify(config, null, 2), 'utf8');
@@ -241,46 +499,63 @@ function saveFriends(friends, userId) {
 }
 
 /**
- * Auto-add friend when they message /start or start
- * Note: In multi-user mode, auto-add uses default friends.json (no userId)
- * Users should add friends via UI for proper per-user isolation
+ * Auto-add friend to a specific user's friend list when they click personalized bot link
+ * Friend must use /start with userId parameter: /start USER_A_ID
  */
-function autoAddFriend(chatId, from) {
-  // Use default friends.json (no userId) for auto-add
-  // This maintains backwards compatibility but means auto-add doesn't support per-user storage
-  // For proper multi-user support, users should add friends via UI
-  const friends = loadFriends(null);
-  
-  // Check if friend already exists
-  const existingFriend = friends.find(f => f.chatId === chatId || f.chatId === parseInt(chatId));
-  
-  if (existingFriend) {
-    console.log(`✅ Friend ${existingFriend.name} (${chatId}) already in list`);
+function autoAddFriendForUser(chatId, from, userId) {
+  if (!userId) {
+    console.error('❌ Cannot add friend: userId is required');
     return;
   }
-  
+
+  // Load friends for the specific user
+  const friends = loadFriends(userId);
+
+  // Check if friend already exists in this user's list
+  const existingFriend = friends.find(f => f.chatId === chatId || f.chatId === parseInt(chatId));
+
+  if (existingFriend) {
+    console.log(`✅ Friend ${existingFriend.name} (${chatId}) already in user ${userId}'s list`);
+    // Still track in detectedContacts so they appear in dropdown
+    detectedContacts.set(chatId, {
+      chatId: chatId,
+      username: from.username || null,
+      firstName: from.first_name || 'Unknown',
+      lastName: from.last_name || null
+    });
+    return;
+  }
+
   // Generate friend name
-  const name = from.first_name + (from.last_name ? ` ${from.last_name}` : '') || 
-               from.username ? `@${from.username}` : 
-               'Unknown';
-  
-  // Add new friend
+  const name = (from.first_name + (from.last_name ? ` ${from.last_name}` : '')) ||
+    (from.username ? `@${from.username}` : '') ||
+    'Unknown';
+
+  // Add new friend to this specific user's list
   friends.push({
     chatId: parseInt(chatId),
     name: name,
     enabled: true
   });
-  
-  if (saveFriends(friends, null)) {
-    console.log(`✅ Auto-added friend: ${name} (${chatId}) - they messaged /start`);
-    console.log(`⚠️  Note: Auto-add uses default friends.json. For per-user storage, add friends via UI.`);
+
+  if (saveFriends(friends, userId)) {
+    console.log(`✅ Auto-added friend: ${name} (${chatId}) to user ${userId}'s friend list via personalized link`);
+
+    // Track in detectedContacts so they appear in this user's dropdown
+    detectedContacts.set(chatId, {
+      chatId: chatId,
+      username: from.username || null,
+      firstName: from.first_name || 'Unknown',
+      lastName: from.last_name || null
+    });
   } else {
-    console.error(`❌ Failed to auto-add friend ${chatId}`);
+    console.error(`❌ Failed to auto-add friend ${chatId} to user ${userId}'s list`);
   }
 }
 
 /**
  * Process and play collated friend responses
+ * Each response can have its own voiceId (if guardian selected a personality)
  */
 async function processFriendResponses(session) {
   if (!session || session.responses.size === 0) {
@@ -288,20 +563,27 @@ async function processFriendResponses(session) {
   }
 
   const responses = Array.from(session.responses.values());
-  
-  // Format responses: "Nasif says: this is this, Roy says: this this this"
-  // This format ensures the name is pronounced first, then "says:", then the message
-  const formattedResponses = responses.map(r => `${r.name} says ${r.text}`).join(', ');
-  
-  console.log(`📝 Collated responses: ${formattedResponses}`);
-  
-  // Play the collated responses as audio
-  try {
-    await playAudio(formattedResponses);
-    console.log(`🔊 Played collated responses from ${responses.length} friend(s)`);
-  } catch (error) {
-    console.error(`❌ Failed to play collated responses:`, error.message);
+
+  console.log(`📝 Processing ${responses.length} response(s) with voice playback`);
+
+  // Play each response with its selected voice (if any) or default
+  for (const response of responses) {
+    const voiceId = response.voiceId || null; // Use guardian's selected voice or null (default say command)
+    // Format: "Name says: text" - this ensures name is pronounced first
+    const formattedText = `${response.name} says ${response.text}`;
+    
+    try {
+      await playAudio(formattedText, voiceId);
+      console.log(`🔊 Played response from ${response.name}${voiceId ? ` with voice ${voiceId}` : ' (default voice)'}`);
+    } catch (error) {
+      console.error(`❌ Failed to play response from ${response.name}:`, error.message);
+    }
+    
+    // Small delay between responses for clarity
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
+
+  console.log(`✅ Finished playing all ${responses.length} response(s)`);
 }
 
 function startHttpServer() {
@@ -332,9 +614,24 @@ function startHttpServer() {
       return;
     }
 
-    // GET /contacts - Get detected contacts who messaged the bot
+    // GET /contacts - Get contacts who are in the current user's friend list
+    // Only returns contacts that have explicitly opted-in via personalized link
     if (pathname === '/contacts' && req.method === 'GET') {
-      const contacts = Array.from(detectedContacts.values());
+      const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+      const userId = parsedUrl.searchParams.get('userId') || null;
+
+      // Load this user's friends list
+      const userFriends = loadFriends(userId);
+
+      // Convert friends list to contacts format for dropdown
+      // Only show contacts that are in this user's friend list (opted-in via personalized link)
+      const contacts = userFriends.map(friend => ({
+        chatId: friend.chatId,
+        username: detectedContacts.has(friend.chatId) ? detectedContacts.get(friend.chatId).username : null,
+        firstName: detectedContacts.has(friend.chatId) ? detectedContacts.get(friend.chatId).firstName : friend.name.split(' ')[0] || friend.name,
+        lastName: detectedContacts.has(friend.chatId) ? detectedContacts.get(friend.chatId).lastName : null
+      }));
+
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ contacts }));
       return;
@@ -347,7 +644,7 @@ function startHttpServer() {
       req.on('end', async () => {
         try {
           const { userId, chatId, name } = JSON.parse(body);
-          
+
           if (!chatId || !name) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'chatId and name are required' }));
@@ -355,7 +652,7 @@ function startHttpServer() {
           }
 
           const friends = loadFriends(userId || null);
-          
+
           // Check if friend already exists
           if (friends.find(f => f.chatId === parseInt(chatId) || f.chatId === chatId)) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -389,7 +686,7 @@ function startHttpServer() {
     if (pathname.startsWith('/friends/') && req.method === 'DELETE') {
       const chatId = parseInt(pathname.split('/')[2]);
       const userId = parsedUrl.query.userId || null;
-      
+
       if (!chatId) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Invalid chatId' }));
@@ -419,7 +716,7 @@ function startHttpServer() {
     if (pathname.match(/^\/friends\/(\d+)\/toggle$/) && req.method === 'PATCH') {
       const chatId = parseInt(pathname.split('/')[2]);
       const userId = parsedUrl.query.userId || null;
-      
+
       if (!chatId) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Invalid chatId' }));
@@ -451,20 +748,46 @@ function startHttpServer() {
     if (req.url === '/trigger' && req.method === 'POST') {
       console.log("🔥 Received Trigger from Browser!");
 
-      // Extract userId from request body if provided
+      // Extract userId, userName, and voiceId from request body if provided
       let userId = null;
       let body = '';
-      
+
+      let userName = null;
+      let voiceId = 'FRzaj7L4px15biN0RGSj'; // Default fallback
       await new Promise((resolve) => {
         req.on('data', chunk => { body += chunk.toString(); });
         req.on('end', () => {
+          console.log('🎭 [BOT.JS] Received request body (raw):', body);
           try {
             if (body) {
               const parsedBody = JSON.parse(body);
+              console.log('🎭 [BOT.JS] Parsed request body:', JSON.stringify(parsedBody));
+              
               userId = parsedBody.userId || null;
+              userName = parsedBody.userName || null;
+              
+              // CRITICAL: Get voiceId from request - this MUST come from UI
+              if (parsedBody.voiceId) {
+                voiceId = parsedBody.voiceId;
+                console.log('✅ [BOT.JS] voiceId received from request:', voiceId);
+              } else {
+                console.error('❌ [BOT.JS] NO voiceId in request body! Using default:', voiceId);
+              }
+              
+              // Validate voiceId
+              const validVoiceIds = ['FRzaj7L4px15biN0RGSj', 'wJ5MX7uuKXZwFqGdWM4N', 'ljEOxtzNoGEa58anWyea', 'K8nDX2f6wjv6bCh5UeZi', 'nw6EIXCsQ89uJMjytYb8', 'gad8DmXGyu7hwftX9JqI', 'spZS54yMfsj80VHtUQFY', 'yqZhXcy5spYR7Hhv17QY'];
+              if (!validVoiceIds.includes(voiceId)) {
+                console.error('❌ [BOT.JS] Invalid voiceId:', voiceId, '- using default');
+                voiceId = 'FRzaj7L4px15biN0RGSj';
+              }
+              
+              console.log('🎭 [BOT.JS] Final voiceId to use:', voiceId);
+            } else {
+              console.error('❌ [BOT.JS] No request body received! Using default:', voiceId);
             }
           } catch (e) {
-            // Body might be empty or not JSON - that's okay
+            console.error('❌ [BOT.JS] Error parsing request body:', e.message);
+            console.error('❌ [BOT.JS] Using default voiceId:', voiceId);
           }
           resolve();
         });
@@ -473,8 +796,33 @@ function startHttpServer() {
       const friends = loadFriends(userId);
       const enabledFriends = friends.filter(f => f.enabled !== false);
       console.log(`📋 Sending alerts to ${enabledFriends.length} enabled friend(s) out of ${friends.length} total friend(s)`);
-      
-      const alertMessage = '🚨 Posture Alert: You are slouching! Sit up straight!';
+
+      // If no friends to alert, generate and play AI insult immediately (no waiting)
+      if (enabledFriends.length === 0) {
+        console.log('ℹ️  No friends to alert - generating AI insult immediately');
+
+        // Send response immediately
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: 'No friends to alert - playing AI insult' }));
+
+        // Generate and play AI insult directly with selected personality
+        try {
+          console.log(`🎭 Generating insult with voiceId: ${voiceId}`);
+          const insultResult = await generatePostureInsult(voiceId);
+          console.log(`🎭 Generated insult with voiceId: ${insultResult.voiceId}, voiceName: ${insultResult.voiceName}`);
+          await playAudio(insultResult.text, insultResult.voiceId);
+          console.log(`🤖 AI insult played (no friends scenario) - Voice: ${insultResult.voiceName}`);
+        } catch (error) {
+          console.error('❌ Failed to generate/play AI insult:', error.message);
+        }
+
+        return;
+      }
+
+      // Personalized alert message with user's name - savage but PG-13
+      const alertMessage = userName && userName.trim()
+        ? `🚨 ${userName} is slouching! Tell them to GET UP and straighten out RIGHT NOW or prepare for absolute verbal annihilation! No mercy! 💀`
+        : '🚨 Someone is slouching! Tell them to GET UP and straighten out RIGHT NOW or prepare for absolute verbal annihilation! No mercy! 💀';
 
       // Cancel any existing alert session
       if (activeAlertSession && activeAlertSession.timerId) {
@@ -485,16 +833,22 @@ function startHttpServer() {
       activeAlertSession = {
         timerId: null,
         collectionTimerId: null, // Timer for collecting responses
-        responses: new Map(), // chatId -> {name, text}
+        responses: new Map(), // chatId -> {name, text, voiceId}
         enabledFriends: enabledFriends,
-        aiInsultCancelled: false // Flag to prevent AI insult if any friend replies
+        aiInsultCancelled: false, // Flag to prevent AI insult if any friend replies
+        voiceId: voiceId || null, // Store user's selected personality voice ID (default)
+        guardianPersonalities: new Map() // Guardian's personality selections: Map<chatId, voiceId>
       };
 
-      // Send to enabled friends only
+      // Generate inline keyboard with personality options
+      const personalityKeyboard = generatePersonalityKeyboard();
+      const alertMessageWithButtons = alertMessage + '\n\n⏰ You have 15 seconds to send a message!\n\n🎭 Choose an accent/personality:\n• Select an accent and type a message (it will be played in that voice)\n• OR select an accent and click "Generate AI Roast" to create a savage roast';
+
+      // Send to enabled friends only with personality selection buttons
       for (const friend of enabledFriends) {
         try {
-          await sendAlert(friend.chatId, alertMessage);
-          console.log(`✅ Alert sent to ${friend.name} (${friend.chatId})`);
+          await sendAlert(friend.chatId, alertMessageWithButtons, personalityKeyboard);
+          console.log(`✅ Alert sent to ${friend.name} (${friend.chatId}) with personality selection`);
         } catch (e) {
           console.error(`❌ Failed to send to ${friend.name}:`, e.message);
         }
@@ -504,7 +858,7 @@ function startHttpServer() {
       // If no one replies, generate insult and play audio
       // Store session reference to check in callback
       const sessionRef = activeAlertSession;
-      
+
       activeAlertSession.timerId = setTimeout(async () => {
         // Check if ANY friend replied - if so, DO NOT play AI insult
         // Use the stored session reference to avoid stale closure issues
@@ -517,33 +871,37 @@ function startHttpServer() {
           }
           return;
         }
-        
+
         // Double-check: if activeAlertSession changed, don't play
         if (activeAlertSession !== sessionRef) {
           console.log(`✅ AI insult prevented - new alert session started`);
           return;
         }
-        
+
         // No replies received from anyone - generate AI insult and play it
         console.log(`⏰ No replies from any friends within 15s, generating insult...`);
-        
+
         try {
-          const insult = await generatePostureInsult();
-          
+          // Get voiceId - use user's default (guardian's selection only applies to their typed/generated messages)
+          const sessionVoiceId = sessionRef.voiceId || null;
+          console.log(`🎭 Generating timeout AI insult with user-selected voiceId: ${sessionVoiceId}`);
+          const insultResult = await generatePostureInsult(sessionVoiceId);
+          console.log(`🎭 Generated insult with voiceId: ${insultResult.voiceId}, voiceName: ${insultResult.voiceName}`);
+
           // Final check before playing
           if (activeAlertSession !== sessionRef || sessionRef.aiInsultCancelled || sessionRef.responses.size > 0) {
             console.log(`✅ AI insult prevented - friend replied just before playing`);
             return;
           }
-          
-          // Play the insult as audio
-          await playAudio(insult);
-          
-          console.log(`🔊 Played fallback insult: "${insult}"`);
+
+          // Play the insult as audio with personality voice
+          await playAudio(insultResult.text, insultResult.voiceId);
+
+          console.log(`🔊 Played fallback insult (${insultResult.voiceName}): "${insultResult.text}"`);
         } catch (error) {
           console.error(`❌ Failed to generate/play insult:`, error.message);
         }
-        
+
         // Clear alert session only if it's still the same one
         if (activeAlertSession === sessionRef) {
           activeAlertSession = null;

@@ -4,43 +4,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Posture Snitch</title>
+    <title>Backtrack</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <h1>Posture Snitch Debug</h1>
-    
+    <h1>Backtrack</h1>
+
     <!-- Welcome Banner (shown on first visit) -->
     <div id="welcomeBanner" class="welcome-banner" style="display: none;">
         <div class="welcome-content">
-            <div class="welcome-header">
-                <h2>👋 Welcome!</h2>
-                <button id="dismissBanner" class="btn-dismiss">✕</button>
+            <div class="welcome-top-banner">
+                <h2 class="welcome-title">Welcome to Backtrack</h2>
+                <p class="welcome-tagline" id="taglineText">Ready to fix your posture but with a twist—an AI that roasts
+                    you when you slouch! 🔥</p>
             </div>
-            
+
+            <div class="welcome-header">
+                <h3>Let's get started</h3>
+                <button id="toggleBanner" class="btn-toggle" title="Hide/Show welcome">▼</button>
+            </div>
+
             <div class="welcome-body">
                 <div class="welcome-name">
-                    <label>What's your name? (optional)</label>
-                    <input type="text" id="userNameInput" placeholder="Your name" />
+                    <label>What's your name?</label>
+                    <div class="name-input-group">
+                        <input type="text" id="userNameInput" placeholder="Enter your name" />
+                        <button id="enterNameBtn" class="btn-enter-name">Enter</button>
+                    </div>
                 </div>
-                
+
                 <div class="welcome-instructions">
                     <p><strong>Quick Start:</strong></p>
                     <ol>
-                        <li><strong>Calibrate:</strong> Sit straight → Click "🎯 Calibrate Posture" → Wait for green status</li>
-                        <li><strong>Test it:</strong> <button id="testAlertBtn" class="btn-test">Try Test Alert</button> (AI responds if no friends reply)</li>
-                        <li><strong>Add friends:</strong> Share bot link below → Friend messages '/start' → Add from dropdown</li>
+                        <li><strong>Calibrate:</strong> Sit straight → Click "🎯 Calibrate Posture" → Wait for green
+                            status</li>
+                        <li><strong>Add Guardian Friends:</strong>
+                            <ul class="nested-list">
+                                <li>Share your personalized bot link below with friends you trust</li>
+                                <li>When a friend clicks your link, it opens Telegram and automatically adds them as
+                                    your guardian</li>
+                                <li>Once added, they'll receive alerts whenever you slouch!</li>
+                            </ul>
+                        </li>
+                        <li><strong>How It Works - The 15-Second Rule:</strong>
+                            <ul class="nested-list">
+                                <li>When you slouch, your guardians get an alert: "<strong>[Your Name] is slouching! Sit
+                                        up straight!</strong>"</li>
+                                <li><strong>15 seconds countdown:</strong> If ANY guardian replies within 15 seconds,
+                                    their message plays and the AI stays quiet</li>
+                                <li><strong>AI Backup:</strong> If NO guardian replies within 15 seconds, our savage AI
+                                    generates a brutal roast and plays it for you! 🔥</li>
+                                <li>Multiple guardians? All their replies are collated and played together</li>
+                            </ul>
+                        </li>
                     </ol>
                 </div>
             </div>
-            
-            <div class="welcome-footer">
-                <button id="gotItBtn" class="btn-primary">Got it!</button>
-            </div>
+
         </div>
     </div>
-    
+
     <div id="container">
         <!-- Video element for Person A to debug camera/pose -->
         <video id="webcam" autoplay playsinline width="640" height="480"
@@ -54,6 +78,32 @@
         <p id="status" style="font-size: 1.2em; font-weight: bold; color: #ccc;">Status: Waiting...</p>
     </div>
 
+    <!-- AI Personality Selector Section -->
+    <div id="personalitySection" class="section">
+        <h2>🎭 AI Personality</h2>
+        <div class="form-group">
+            <label>Choose your AI insult personality:</label>
+            <select id="personalitySelector" class="personality-select">
+                <option value="FRzaj7L4px15biN0RGSj">Malay Barber - Friendly and casual</option>
+                <option value="wJ5MX7uuKXZwFqGdWM4N">Indian Tech Support/Scammer - Polite but urgent</option>
+                <option value="ljEOxtzNoGEa58anWyea">Chinese Karen - Direct and critical</option>
+                <option value="K8nDX2f6wjv6bCh5UeZi">Rude French Guy - Sarcastic and witty</option>
+                <option value="nw6EIXCsQ89uJMjytYb8">African Funny Guy - Energetic and entertaining</option>
+                <option value="gad8DmXGyu7hwftX9JqI">Failed Bangalore Startup Founder - Bitter and disruptive</option>
+                <option value="spZS54yMfsj80VHtUQFY">Australian Construction Worker - Wants a beer every hour</option>
+                <option value="yqZhXcy5spYR7Hhv17QY">Texan Cowboy - Gruff and no-nonsense</option>
+            </select>
+        </div>
+        <div id="personalityConfirmation" class="personality-confirmation" style="margin-top: 10px; padding: 10px; background-color: #2d2d2d; border-radius: 4px; border: 1px solid #4CAF50;">
+            <p style="margin: 0; color: #4CAF50; font-weight: bold;">
+                ✅ Active Personality: <span id="activePersonalityName">Loading...</span>
+            </p>
+            <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #aaa;">
+                This personality will roast you when you slouch and no guardian replies within 15 seconds!
+            </p>
+        </div>
+    </div>
+
     <!-- Bot Sharing Section -->
     <div id="botShare" class="section">
         <h2>🤖 Share Your Bot</h2>
@@ -63,31 +113,37 @@
             </a>
             <button id="copyBotLink" class="btn-secondary">Copy Link</button>
         </div>
-        <p class="instruction">💡 Tell your friend to message '/start' or 'hi' to your bot, then they'll appear in the contacts list below!</p>
+        <p class="instruction">💡 Share your personalized link above. When your friend clicks it, they'll automatically
+            be added as your guardian!</p>
+    </div>
+
+    <!-- Slouch Tracker Section -->
+    <div id="slouchTrackerSection" class="section">
+        <h2>📊 Slouch Tracker</h2>
+        <div id="slouchTrackerContainer" style="position: relative; width: 100%; height: 300px;">
+            <canvas id="slouchChart"></canvas>
+            <p id="slouchStats" style="margin-top: 10px; color: #aaa; font-size: 0.9em; text-align: center;"></p>
+        </div>
     </div>
 
     <!-- Friends Management Section -->
     <div id="friendsSection" class="section">
         <h2>👥 Guardian Friends</h2>
-        
-        <!-- Add Friend Form -->
-        <div class="add-friend-form">
-            <h3>Add Guardian</h3>
-            <p class="instruction-small">💡 Friends who message your bot will appear in the list below</p>
-            
-            <div class="form-group">
-                <label>Select a contact who has messaged your bot:</label>
-                <select id="contactsDropdown">
-                    <option value="">Select a contact...</option>
-                </select>
-            </div>
-            
-            <button id="addFriendBtn" class="btn-primary">Add Guardian</button>
+
+        <!-- Friends Info Box -->
+        <div class="guardian-info-box" style="margin-bottom: 20px; padding: 12px; background-color: #2d2d2d; border-radius: 8px; border: 1px solid #4CAF50; font-size: 0.85em;">
+            <p style="margin: 0 0 8px 0; color: #4CAF50; font-weight: bold; font-style: italic;">💡 How Guardians Work:</p>
+            <ul style="margin: 0; padding-left: 20px; color: #aaa; line-height: 1.6; font-style: italic;">
+                <li><strong>Auto-Add:</strong> Friends who click your personalized bot link above will be automatically added as guardians</li>
+                <li><strong>15-Second Rule:</strong> When you slouch, guardians have 15 seconds to reply or an AI roast will play</li>
+                <li><strong>Choose an Accent:</strong> Guardians can select a personality accent - their typed messages will be played in that voice</li>
+                <li><strong>Generate Roast:</strong> Guardians can click "Generate AI Roast" to create a savage AI-generated roast using the selected personality</li>
+            </ul>
         </div>
 
         <!-- Friends List -->
         <div id="friendsList" class="friends-list">
-            <p id="noFriends" class="empty-state">No guardians added yet. Add a friend above!</p>
+            <p id="noFriends" class="empty-state">No guardians added yet. Share your bot link above to add guardians!</p>
         </div>
     </div>
 
@@ -96,9 +152,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
         crossorigin="anonymous"></script>
 
+    <!-- Chart.js for slouch tracker graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
     <!-- Friends Management -->
     <script src="ui.js"></script>
-    
+
     <!-- Main Entry Point -->
     <script type="module" src="../app/main.js"></script>
 </body>

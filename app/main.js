@@ -10,6 +10,39 @@ import { processPostureState } from './triggerEngine.js';
 // Simple state to track if we have calibrated
 let isCalibrated = false;
 
+/**
+ * Track a slouch event by saving timestamp to localStorage
+ */
+function trackSlouch() {
+    try {
+        const timestamp = Date.now();
+        const slouchesKey = 'postureSnitch_slouches';
+        
+        // Get existing slouches from localStorage
+        const existingSlouchesJson = localStorage.getItem(slouchesKey);
+        const slouches = existingSlouchesJson ? JSON.parse(existingSlouchesJson) : [];
+        
+        // Add new slouch timestamp
+        slouches.push(timestamp);
+        
+        // Keep only last 7 days of data (to prevent localStorage from getting too large)
+        const sevenDaysAgo = timestamp - (7 * 24 * 60 * 60 * 1000);
+        const filteredSlouches = slouches.filter(ts => ts >= sevenDaysAgo);
+        
+        // Save back to localStorage
+        localStorage.setItem(slouchesKey, JSON.stringify(filteredSlouches));
+        
+        console.log('📊 Slouch tracked at:', new Date(timestamp).toISOString());
+        
+        // Trigger graph update if function exists
+        if (window.updateSlouchGraph) {
+            window.updateSlouchGraph();
+        }
+    } catch (error) {
+        console.error('❌ Failed to track slouch:', error.message);
+    }
+}
+
 async function onPoseResults(results) {
     const canvas = document.getElementById('output_canvas');
     const ctx = canvas.getContext('2d');
@@ -40,6 +73,9 @@ async function onPoseResults(results) {
                 // TRIGGER HAPPENED
                 console.log("⚠️ SLOUCH DETECTED!");
 
+                // Track slouch event
+                trackSlouch();
+
                 // 1. Browser Notification
                 if (Notification.permission === "granted") {
                     new Notification("⚠️ SLOUCH DETECTED!", {
@@ -51,16 +87,54 @@ async function onPoseResults(results) {
                 }
 
                 // 2. Telegram Bot Trigger
-                // Get userId from localStorage
+                // Get userId, userName, and selected personality from localStorage
                 const userId = localStorage.getItem('postureSnitch_userId');
-                fetch('http://localhost:3001/trigger', { 
+                const userName = localStorage.getItem('postureSnitch_userName');
+                
+                // Get selected personality - ALWAYS read from dropdown first, it's the source of truth
+                let selectedPersonality = 'FRzaj7L4px15biN0RGSj'; // Default fallback
+                const personalitySelector = document.getElementById('personalitySelector');
+                
+                if (personalitySelector) {
+                  selectedPersonality = personalitySelector.value || selectedPersonality;
+                  console.log('🎭 [MAIN.JS] Selected personality from dropdown:', selectedPersonality);
+                } else {
+                  selectedPersonality = localStorage.getItem('postureSnitch_selectedPersonality') || selectedPersonality;
+                  console.log('🎭 [MAIN.JS] Dropdown not found, using localStorage:', selectedPersonality);
+                }
+                
+                // Validate we have a valid voiceId
+                const validVoiceIds = ['FRzaj7L4px15biN0RGSj', 'wJ5MX7uuKXZwFqGdWM4N', 'ljEOxtzNoGEa58anWyea', 'K8nDX2f6wjv6bCh5UeZi', 'nw6EIXCsQ89uJMjytYb8', 'gad8DmXGyu7hwftX9JqI', 'spZS54yMfsj80VHtUQFY', 'yqZhXcy5spYR7Hhv17QY'];
+                if (!validVoiceIds.includes(selectedPersonality)) {
+                  console.error('❌ [MAIN.JS] Invalid voiceId:', selectedPersonality, '- using default');
+                  selectedPersonality = 'FRzaj7L4px15biN0RGSj';
+                }
+                
+                const requestBody = {
+                    userId: userId || null,
+                    userName: userName || null,
+                    voiceId: selectedPersonality  // ALWAYS send voiceId, never null
+                };
+                
+                console.log('🎭 [MAIN.JS] Sending trigger request with body:', JSON.stringify(requestBody));
+                
+                fetch('http://localhost:3001/trigger', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ userId: userId || null })
+                    body: JSON.stringify(requestBody)
                 })
-                    .catch(e => console.error("Failed to trigger bot:", e));
+                    .then(response => {
+                        console.log('✅ [MAIN.JS] Trigger request sent successfully');
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('✅ [MAIN.JS] Trigger response:', data);
+                    })
+                    .catch(e => {
+                        console.error("❌ [MAIN.JS] Failed to trigger bot:", e);
+                    });
             });
         }
     }
@@ -104,8 +178,48 @@ async function init() {
         const calibrateBtn = document.getElementById('calibrateBtn');
         const statusText = document.getElementById('status');
 
+        // Function to check if name is entered and update button state
+        function updateCalibrateButtonState() {
+            if (!calibrateBtn) return;
+
+            const userName = localStorage.getItem('postureSnitch_userName');
+            const hasName = userName && userName.trim().length > 0;
+
+            if (!hasName) {
+                calibrateBtn.disabled = true;
+                calibrateBtn.style.opacity = '0.5';
+                calibrateBtn.style.cursor = 'not-allowed';
+                if (statusText) {
+                    statusText.innerText = "Status: Please enter your name first";
+                    statusText.style.color = "#FF9800";
+                }
+            } else {
+                calibrateBtn.disabled = false;
+                calibrateBtn.style.opacity = '1';
+                calibrateBtn.style.cursor = 'pointer';
+                if (!isCalibrated && statusText) {
+                    statusText.innerText = "Status: Ready to calibrate";
+                    statusText.style.color = "#ccc";
+                }
+            }
+        }
+
+        // Check name on page load and when name changes
+        updateCalibrateButtonState();
+        // Listen for storage changes (when name is entered in welcome banner)
+        window.addEventListener('storage', updateCalibrateButtonState);
+        // Also check periodically (for same-tab changes)
+        const nameCheckInterval = setInterval(updateCalibrateButtonState, 500);
+
         if (calibrateBtn) {
             calibrateBtn.addEventListener('click', () => {
+                // Double-check name before calibrating
+                const userName = localStorage.getItem('postureSnitch_userName');
+                if (!userName || !userName.trim()) {
+                    alert("Please enter your name in the welcome banner above before calibrating.");
+                    return;
+                }
+
                 console.log("Calibration requested...");
                 if (statusText) {
                     statusText.innerText = "Status: Calibrating... Sit up straight!";
@@ -120,6 +234,13 @@ async function init() {
                 statusText.innerText = "Status: Monitoring ✅";
                 statusText.style.color = "#4CAF50";
             }
+            // Update button to green "Recalibrate"
+            if (calibrateBtn) {
+                calibrateBtn.textContent = "🔄 Recalibrate";
+                calibrateBtn.style.backgroundColor = "#4CAF50";
+                calibrateBtn.style.color = "#fff";
+            }
+            clearInterval(nameCheckInterval); // Stop checking name after calibration
         };
 
     } catch (err) {
