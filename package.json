@@ -1,0 +1,16 @@
+{
+  "name": "posture-snitch",
+  "version": "1.0.0",
+  "description": "Posture monitoring app with Telegram integration",
+  "main": "app/main.js",
+  "type": "commonjs",
+  "scripts": {
+    "bot": "node telegram/bot.js",
+    "start": "node app/main.js",
+    "test-trigger": "node app/main.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+
