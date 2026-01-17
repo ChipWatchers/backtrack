@@ -51,7 +51,15 @@ async function onPoseResults(results) {
                 }
 
                 // 2. Telegram Bot Trigger
-                fetch('http://localhost:3001/trigger', { method: 'POST' })
+                // Get userId from localStorage
+                const userId = localStorage.getItem('postureSnitch_userId');
+                fetch('http://localhost:3001/trigger', { 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId: userId || null })
+                })
                     .catch(e => console.error("Failed to trigger bot:", e));
             });
         }

@@ -10,6 +10,37 @@
 
 <body>
     <h1>Posture Snitch Debug</h1>
+    
+    <!-- Welcome Banner (shown on first visit) -->
+    <div id="welcomeBanner" class="welcome-banner" style="display: none;">
+        <div class="welcome-content">
+            <div class="welcome-header">
+                <h2>👋 Welcome!</h2>
+                <button id="dismissBanner" class="btn-dismiss">✕</button>
+            </div>
+            
+            <div class="welcome-body">
+                <div class="welcome-name">
+                    <label>What's your name? (optional)</label>
+                    <input type="text" id="userNameInput" placeholder="Your name" />
+                </div>
+                
+                <div class="welcome-instructions">
+                    <p><strong>Quick Start:</strong></p>
+                    <ol>
+                        <li><strong>Calibrate:</strong> Sit straight → Click "🎯 Calibrate Posture" → Wait for green status</li>
+                        <li><strong>Test it:</strong> <button id="testAlertBtn" class="btn-test">Try Test Alert</button> (AI responds if no friends reply)</li>
+                        <li><strong>Add friends:</strong> Share bot link below → Friend messages '/start' → Add from dropdown</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="welcome-footer">
+                <button id="gotItBtn" class="btn-primary">Got it!</button>
+            </div>
+        </div>
+    </div>
+    
     <div id="container">
         <!-- Video element for Person A to debug camera/pose -->
         <video id="webcam" autoplay playsinline width="640" height="480"
@@ -23,11 +54,51 @@
         <p id="status" style="font-size: 1.2em; font-weight: bold; color: #ccc;">Status: Waiting...</p>
     </div>
 
+    <!-- Bot Sharing Section -->
+    <div id="botShare" class="section">
+        <h2>🤖 Share Your Bot</h2>
+        <div class="bot-link-container">
+            <a id="botLink" href="https://t.me/backtrack_hacknroll_bot" target="_blank" class="bot-link">
+                t.me/backtrack_hacknroll_bot
+            </a>
+            <button id="copyBotLink" class="btn-secondary">Copy Link</button>
+        </div>
+        <p class="instruction">💡 Tell your friend to message '/start' or 'hi' to your bot, then they'll appear in the contacts list below!</p>
+    </div>
+
+    <!-- Friends Management Section -->
+    <div id="friendsSection" class="section">
+        <h2>👥 Guardian Friends</h2>
+        
+        <!-- Add Friend Form -->
+        <div class="add-friend-form">
+            <h3>Add Guardian</h3>
+            <p class="instruction-small">💡 Friends who message your bot will appear in the list below</p>
+            
+            <div class="form-group">
+                <label>Select a contact who has messaged your bot:</label>
+                <select id="contactsDropdown">
+                    <option value="">Select a contact...</option>
+                </select>
+            </div>
+            
+            <button id="addFriendBtn" class="btn-primary">Add Guardian</button>
+        </div>
+
+        <!-- Friends List -->
+        <div id="friendsList" class="friends-list">
+            <p id="noFriends" class="empty-state">No guardians added yet. Add a friend above!</p>
+        </div>
+    </div>
+
     <!-- MediaPipe Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
         crossorigin="anonymous"></script>
 
+    <!-- Friends Management -->
+    <script src="ui.js"></script>
+    
     <!-- Main Entry Point -->
     <script type="module" src="../app/main.js"></script>
 </body>
