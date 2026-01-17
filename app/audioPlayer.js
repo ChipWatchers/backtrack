@@ -9,26 +9,33 @@ const execAsync = promisify(exec);
 /**
  * Load secrets from config/secrets.env
  */
+/**
+ * Load secrets from config/secrets.env or process.env
+ */
 function loadSecrets() {
+  const secrets = {};
   const secretsPath = path.join(__dirname, '../config/secrets.env');
+
   try {
-    const secretsContent = fs.readFileSync(secretsPath, 'utf8');
-    const secrets = {};
+    if (fs.existsSync(secretsPath)) {
+      const secretsContent = fs.readFileSync(secretsPath, 'utf8');
 
-    secretsContent.split('\n').forEach(line => {
-      const trimmed = line.trim();
-      if (trimmed && !trimmed.startsWith('#')) {
-        const [key, ...valueParts] = trimmed.split('=');
-        if (key && valueParts.length > 0) {
-          secrets[key.trim()] = valueParts.join('=').trim();
+      secretsContent.split('\n').forEach(line => {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#')) {
+          const [key, ...valueParts] = trimmed.split('=');
+          if (key && valueParts.length > 0) {
+            secrets[key.trim()] = valueParts.join('=').trim();
+          }
         }
-      }
-    });
-
-    return secrets;
+      });
+    }
   } catch (error) {
-    throw new Error('Failed to load secrets.env: ' + error.message);
+    // Ignore error (file missing in production)
   }
+
+  // return merged object, preferring file (local dev) but falling back to process.env (production)
+  return { ...process.env, ...secrets };
 }
 
 /**
