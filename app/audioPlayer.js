@@ -169,5 +169,4 @@ module.exports = {
   playAudioWithSay,
   generateAudioStream
 };
-playAudio
-};
+playAudio;
