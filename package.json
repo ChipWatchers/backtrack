@@ -1,13 +1,22 @@
 {
-    "name": "backtrack",
-    "version": "1.0.0",
-    "description": "Posture Snitch - Hack&Roll 2026",
-    "main": "app/main.js",
-    "scripts": {
-        "start": "npx serve ."
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "dependencies": {}
+  "name": "posture-snitch",
+  "version": "1.0.0",
+  "description": "Posture Snitch - Hack&Roll 2026",
+  "main": "app/main.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "npx serve .",
+    "bot": "node telegram/bot.js",
+    "test-trigger": "node telegram/test-alerts.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-telegram-bot-api": "^0.61.0",
+    "dotenv": "^16.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

@@ -24,8 +24,7 @@ async function onPoseResults(results) {
             window.drawLandmarks(ctx, results.poseLandmarks, { color: '#FF0000', lineWidth: 2 });
         }
 
-        // Auto-calibrate on first detection for hackathon speed? 
-        // Or wait for a button? Let's auto-calibrate after 3 seconds or just immediately for now.
+        // Auto-calibrate check
         if (window.shouldCalibrateNextFrame) {
             calibrate(results.poseLandmarks);
             isCalibrated = true;
@@ -36,21 +35,22 @@ async function onPoseResults(results) {
 
         if (isCalibrated) {
             const state = getPostureState(results.poseLandmarks);
-            // console.log("State:", state); // noisy
 
             processPostureState(state, () => {
                 // TRIGGER HAPPENED
                 console.log("⚠️ SLOUCH DETECTED!");
 
                 if (Notification.permission === "granted") {
-                    const n = new Notification("⚠️ SLOUCH DETECTED!", {
+                    new Notification("⚠️ SLOUCH DETECTED!", {
                         body: "Sit up straight!",
-                        silent: false // Try to make sound if possible (browser dependent)
+                        silent: false
                     });
                 } else {
                     // Fallback
                     alert("⚠️ SLOUCH DETECTED!");
                 }
+
+                // TODO: Send signal to Telegram Bot
             });
         }
     }
@@ -79,8 +79,6 @@ async function init() {
         await initPoseDetector(onPoseResults);
 
         // 3. Start Loop
-        // We need to feed frames to pose detector
-        // Using requestAnimationFrame loop
         async function poseLoop() {
             await sendFrame(videoElement);
             requestAnimationFrame(poseLoop);
@@ -92,36 +90,26 @@ async function init() {
             poseLoop();
         };
 
-        // Expose calibrate function to window for debug
-        window.doCalibrate = () => {
-            console.log("Calibrating in 3 seconds...");
-            setTimeout(() => {
-                // We need the latest landmarks... 
-                // This is a bit dirty because we don't store them globally. 
-                // Let's make onPoseResults calibration smarter.
-                isCalibrated = false; // Next frame will calibrate
-                alert("Calibrated!");
-            }, 3000);
-        };
-
         // Wire up Calibrate Button
         const calibrateBtn = document.getElementById('calibrateBtn');
         const statusText = document.getElementById('status');
 
-        calibrateBtn.addEventListener('click', () => {
-            console.log("Calibration requested...");
-            statusText.innerText = "Status: Calibrating... Sit up straight!";
-            statusText.style.color = "yellow";
+        if (calibrateBtn) {
+            calibrateBtn.addEventListener('click', () => {
+                console.log("Calibration requested...");
+                if (statusText) {
+                    statusText.innerText = "Status: Calibrating... Sit up straight!";
+                    statusText.style.color = "yellow";
+                }
+                window.shouldCalibrateNextFrame = true;
+            });
+        }
 
-            // Trigger next frame calibration
-            window.shouldCalibrateNextFrame = true;
-        });
-
-        // Listen for calibration completion event (we can emit this or just use a callback, 
-        // but since we are in main.js, we can patch the onPoseResults logic to update UI)
         window.onCalibrationComplete = () => {
-            statusText.innerText = "Status: Posture Locked & Monitoring ✅";
-            statusText.style.color = "#4CAF50";
+            if (statusText) {
+                statusText.innerText = "Status: Monitoring ✅";
+                statusText.style.color = "#4CAF50";
+            }
         };
 
     } catch (err) {
