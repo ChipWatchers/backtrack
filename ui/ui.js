@@ -36,7 +36,8 @@ function initializeOnboarding() {
   // Check if onboarding already completed
   const onboardingComplete = localStorage.getItem('postureSnitch_onboardingComplete');
 
-  if (!onboardingComplete) {
+  // For testing: Always show banner
+  if (true || !onboardingComplete) {
     // Show welcome banner on first visit
     const welcomeBanner = document.getElementById('welcomeBanner');
     if (welcomeBanner) {
