@@ -9,6 +9,10 @@
 </head>
 
 <body>
+    <!-- X-Ray Spine Background Canvas -->
+    <canvas id="spineBackground"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none;"></canvas>
+
     <h1>Backtrack</h1>
 
     <!-- Welcome Banner (shown on first visit) -->
@@ -70,7 +74,7 @@
         <video id="webcam" autoplay playsinline width="640" height="480"
             style="transform: scaleX(-1); border: 2px solid red;"></video>
         <canvas id="output_canvas" width="640" height="480"
-            style="position: absolute; left: 0; top: 0; pointer-events: none; transform: scaleX(-1);"></canvas>
+            style="transform: scaleX(-1); position: absolute; left: 0; top: 0; pointer-events: none;"></canvas>
     </div>
 
     <div id="controls" style="margin-top: 10px; text-align: center;">
@@ -162,6 +166,9 @@
 
     <!-- Chart.js for slouch tracker graph -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- X-Ray Spine Background -->
+    <script src="spineBackground.js"></script>
 
     <!-- Friends Management -->
     <script src="ui.js"></script>

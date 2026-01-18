@@ -36,8 +36,7 @@ function initializeOnboarding() {
   // Check if onboarding already completed
   const onboardingComplete = localStorage.getItem('postureSnitch_onboardingComplete');
 
-  // For testing: Always show banner
-  if (true || !onboardingComplete) {
+  if (!onboardingComplete) {
     // Show welcome banner on first visit
     const welcomeBanner = document.getElementById('welcomeBanner');
     if (welcomeBanner) {
@@ -160,54 +159,7 @@ function initializeOnboarding() {
       }
     });
   }
-
-  // Test Alert button (from Main)
-  const testAlertBtn = document.getElementById('testAlertBtn');
-  if (testAlertBtn) {
-    testAlertBtn.addEventListener('click', async () => {
-      try {
-        const userId = getUserId();
-        const response = await fetch(`${API_BASE}/trigger`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ userId: userId || null })
-        });
-
-        if (response.ok) {
-          showSuccess('Test alert triggered! Check your console and wait 15s for AI response.');
-        } else {
-          showError('Failed to trigger test alert. Make sure bot server is running.');
-        }
-      } catch (error) {
-        console.error('Failed to trigger test alert:', error);
-        showError('Failed to trigger test alert. Make sure bot server is running.');
-      }
-    });
-  }
-
-  // Dismiss banner (from Main)
-  const dismissBanner = document.getElementById('dismissBanner');
-  const gotItBtn = document.getElementById('gotItBtn');
-
-  const hideBanner = () => {
-    const welcomeBanner = document.getElementById('welcomeBanner');
-    if (welcomeBanner) {
-      welcomeBanner.style.display = 'none';
-      localStorage.setItem('postureSnitch_onboardingComplete', 'true');
-    }
-  };
-
-  if (dismissBanner) {
-    dismissBanner.addEventListener('click', hideBanner);
-  }
-
-  if (gotItBtn) {
-    gotItBtn.addEventListener('click', hideBanner);
-  }
 }
-
 
 function initializeFriendsManagement() {
   // Generate user-specific bot link with userId parameter
