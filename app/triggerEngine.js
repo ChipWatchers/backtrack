@@ -5,6 +5,8 @@
 
 let slouchStartTime = null;
 const SLOUCH_DURATION_MS = 2000; // Must slouch for 2 seconds to trigger
+const COOLDOWN_DURATION_MS = 30000; // 30 seconds cooldown
+let lastTriggerTime = 0;
 let hasTriggeredForThisEpisode = false;
 
 export function processPostureState(state, onTriggerCallback) {
@@ -13,11 +15,14 @@ export function processPostureState(state, onTriggerCallback) {
             slouchStartTime = Date.now();
         } else {
             const elapsed = Date.now() - slouchStartTime;
-            if (elapsed > SLOUCH_DURATION_MS && !hasTriggeredForThisEpisode) {
+            const timeSinceLastTrigger = Date.now() - lastTriggerTime;
+
+            if (elapsed > SLOUCH_DURATION_MS && !hasTriggeredForThisEpisode && timeSinceLastTrigger > COOLDOWN_DURATION_MS) {
                 // IT'S REAL!
                 console.log(">>> SLOUCH TRIGGERED <<<");
                 if (onTriggerCallback) onTriggerCallback();
                 hasTriggeredForThisEpisode = true;
+                lastTriggerTime = Date.now();
             }
         }
     } else if (state === "upright") {
