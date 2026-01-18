@@ -70,7 +70,7 @@
         <video id="webcam" autoplay playsinline width="640" height="480"
             style="transform: scaleX(-1); border: 2px solid red;"></video>
         <canvas id="output_canvas" width="640" height="480"
-            style="position: absolute; left: 0; top: 0; pointer-events: none;"></canvas>
+            style="position: absolute; left: 0; top: 0; pointer-events: none; transform: scaleX(-1);"></canvas>
     </div>
 
     <div id="controls" style="margin-top: 10px; text-align: center;">
@@ -94,7 +94,8 @@
                 <option value="yqZhXcy5spYR7Hhv17QY">Texan Cowboy - Gruff and no-nonsense</option>
             </select>
         </div>
-        <div id="personalityConfirmation" class="personality-confirmation" style="margin-top: 10px; padding: 10px; background-color: #2d2d2d; border-radius: 4px; border: 1px solid #4CAF50;">
+        <div id="personalityConfirmation" class="personality-confirmation"
+            style="margin-top: 10px; padding: 10px; background-color: #2d2d2d; border-radius: 4px; border: 1px solid #4CAF50;">
             <p style="margin: 0; color: #4CAF50; font-weight: bold;">
                 ✅ Active Personality: <span id="activePersonalityName">Loading...</span>
             </p>
@@ -131,19 +132,26 @@
         <h2>👥 Guardian Friends</h2>
 
         <!-- Friends Info Box -->
-        <div class="guardian-info-box" style="margin-bottom: 20px; padding: 12px; background-color: #2d2d2d; border-radius: 8px; border: 1px solid #4CAF50; font-size: 0.85em;">
-            <p style="margin: 0 0 8px 0; color: #4CAF50; font-weight: bold; font-style: italic;">💡 How Guardians Work:</p>
+        <div class="guardian-info-box"
+            style="margin-bottom: 20px; padding: 12px; background-color: #2d2d2d; border-radius: 8px; border: 1px solid #4CAF50; font-size: 0.85em;">
+            <p style="margin: 0 0 8px 0; color: #4CAF50; font-weight: bold; font-style: italic;">💡 How Guardians Work:
+            </p>
             <ul style="margin: 0; padding-left: 20px; color: #aaa; line-height: 1.6; font-style: italic;">
-                <li><strong>Auto-Add:</strong> Friends who click your personalized bot link above will be automatically added as guardians</li>
-                <li><strong>15-Second Rule:</strong> When you slouch, guardians have 15 seconds to reply or an AI roast will play</li>
-                <li><strong>Choose an Accent:</strong> Guardians can select a personality accent - their typed messages will be played in that voice</li>
-                <li><strong>Generate Roast:</strong> Guardians can click "Generate AI Roast" to create a savage AI-generated roast using the selected personality</li>
+                <li><strong>Auto-Add:</strong> Friends who click your personalized bot link above will be automatically
+                    added as guardians</li>
+                <li><strong>15-Second Rule:</strong> When you slouch, guardians have 15 seconds to reply or an AI roast
+                    will play</li>
+                <li><strong>Choose an Accent:</strong> Guardians can select a personality accent - their typed messages
+                    will be played in that voice</li>
+                <li><strong>Generate Roast:</strong> Guardians can click "Generate AI Roast" to create a savage
+                    AI-generated roast using the selected personality</li>
             </ul>
         </div>
 
         <!-- Friends List -->
         <div id="friendsList" class="friends-list">
-            <p id="noFriends" class="empty-state">No guardians added yet. Share your bot link above to add guardians!</p>
+            <p id="noFriends" class="empty-state">No guardians added yet. Share your bot link above to add guardians!
+            </p>
         </div>
     </div>
 
