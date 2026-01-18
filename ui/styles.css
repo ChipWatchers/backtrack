@@ -1,168 +1,285 @@
+/* Black & White Skeletal Theme - Modern Sleek Design */
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #1e1e1e;
-    color: #fff;
+    font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+    background-color: #000000;
+    color: #ffffff;
     margin: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    padding: 0;
     min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
 }
 
+/* X-Ray Background Canvas */
+#spineBackground {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.3; /* Subtle background */
+}
+
+/* Main Title */
 h1 {
-    margin-top: 20px;
+    margin: 20px 0;
+    text-align: center;
+    font-size: 3em;
+    font-weight: 900;
+    color: #ffffff;
+    text-shadow: 
+        0 0 10px #ffffff,
+        0 0 20px #ffffff,
+        0 0 30px #ffffff;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    position: relative;
+    z-index: 10;
 }
 
+/* Container for video */
 #container {
     position: relative;
-    margin: 20px;
-    border: 3px solid #333;
-    border-radius: 8px;
+    margin: 20px auto;
+    border: 3px solid #ffffff;
+    border-radius: 0;
     overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    box-shadow: 
+        0 0 20px rgba(255, 255, 255, 0.3),
+        inset 0 0 20px rgba(255, 255, 255, 0.1);
+    background-color: #000000;
+    max-width: 640px;
 }
 
 #webcam {
     display: block;
     background-color: #000;
+    filter: contrast(1.2) brightness(0.9);
 }
 
 #output_canvas {
     z-index: 10;
 }
 
+/* Controls */
+#controls {
+    margin: 20px auto;
+    text-align: center;
+    position: relative;
+    z-index: 10;
+}
+
+#status {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #ffffff;
+    text-shadow: 0 0 10px #ffffff;
+    margin-top: 10px;
+}
+
+/* Modern Sleek Buttons */
 button {
-    background-color: #4CAF50;
-    border: none;
-    color: white;
-    padding: 10px 20px;
+    background-color: #000000;
+    border: 2px solid #ffffff;
+    color: #ffffff;
+    padding: 12px 24px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    font-size: 16px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
     margin: 4px 2px;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 0;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    font-family: 'Courier New', monospace;
+    position: relative;
+    overflow: hidden;
+}
+
+button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background-color: #ffffff;
+    transition: left 0.3s ease;
+    z-index: -1;
 }
 
 button:hover {
-    background-color: #45a049;
+    color: #000000;
+    box-shadow: 
+        0 0 20px rgba(255, 255, 255, 0.8),
+        inset 0 0 20px rgba(255, 255, 255, 0.2);
 }
 
-/* Friends Management Styles */
+button:hover::before {
+    left: 0;
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
+/* Sections - Modern Sleek Banners */
 .section {
-    background-color: #2d2d2d;
-    border: 2px solid #444;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 20px;
-    max-width: 600px;
+    background-color: rgba(0, 0, 0, 0.85);
+    border: 2px solid #ffffff;
+    border-radius: 0;
+    padding: 30px;
+    margin: 30px auto;
+    max-width: 700px;
     width: 90%;
+    position: relative;
+    z-index: 10;
+    box-shadow: 
+        0 0 30px rgba(255, 255, 255, 0.2),
+        inset 0 0 30px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+}
+
+.section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #ffffff, transparent);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
 }
 
 .section h2 {
     margin-top: 0;
-    color: #4CAF50;
-    border-bottom: 2px solid #4CAF50;
-    padding-bottom: 10px;
+    color: #ffffff;
+    border-bottom: 2px solid #ffffff;
+    padding-bottom: 15px;
+    font-size: 1.8em;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
 /* Bot Sharing */
 .bot-link-container {
     display: flex;
-    gap: 10px;
+    gap: 15px;
     align-items: center;
-    margin: 15px 0;
+    margin: 20px 0;
 }
 
 .bot-link {
     flex: 1;
-    padding: 10px;
-    background-color: #1e1e1e;
-    border: 2px solid #4CAF50;
-    border-radius: 4px;
-    color: #4CAF50;
+    padding: 12px;
+    background-color: #000000;
+    border: 2px solid #ffffff;
+    border-radius: 0;
+    color: #ffffff;
     text-decoration: none;
     font-family: monospace;
     text-align: center;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    letter-spacing: 0.1em;
 }
 
 .bot-link:hover {
-    background-color: #2d4d2d;
+    background-color: #ffffff;
+    color: #000000;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
 }
 
 .btn-secondary {
-    background-color: #2196F3;
-    padding: 10px 20px;
+    background-color: #000000;
+    border: 2px solid #ffffff;
+    padding: 12px 24px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
 }
 
 .btn-secondary:hover {
-    background-color: #1976D2;
+    background-color: #ffffff;
+    color: #000000;
 }
 
 .instruction {
     font-size: 0.9em;
-    color: #aaa;
-    margin-top: 10px;
-    line-height: 1.5;
+    color: #cccccc;
+    margin-top: 15px;
+    line-height: 1.6;
+    font-style: italic;
 }
 
 .instruction-small {
     font-size: 0.85em;
-    color: #888;
+    color: #999999;
     margin: 10px 0;
     font-style: italic;
 }
 
-/* Add Friend Form */
-.add-friend-form {
-    background-color: #1e1e1e;
-    padding: 15px;
-    border-radius: 4px;
-    margin-bottom: 20px;
-}
-
-.add-friend-form h3 {
-    margin-top: 0;
-    color: #fff;
-}
-
+/* Form Elements */
 .form-group {
-    margin: 10px 0;
+    margin: 20px 0;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 5px;
-    color: #ccc;
+    margin-bottom: 8px;
+    color: #ffffff;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-size: 0.85em;
 }
 
 .form-group input,
 .form-group select {
     width: 100%;
-    padding: 8px;
-    background-color: #2d2d2d;
-    border: 1px solid #555;
-    border-radius: 4px;
-    color: #fff;
+    padding: 12px;
+    background-color: #000000;
+    border: 2px solid #ffffff;
+    border-radius: 0;
+    color: #ffffff;
     font-size: 14px;
+    font-family: 'Courier New', monospace;
     box-sizing: border-box;
+    transition: all 0.3s ease;
 }
 
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
-    border-color: #4CAF50;
+    border-color: #ffffff;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+    background-color: #0a0a0a;
 }
 
 .btn-primary {
-    background-color: #4CAF50;
+    background-color: #000000;
+    border: 2px solid #ffffff;
     width: 100%;
-    margin-top: 10px;
+    margin-top: 15px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
 }
 
 .btn-primary:hover {
-    background-color: #45a049;
+    background-color: #ffffff;
+    color: #000000;
 }
 
 /* Friends List */
@@ -171,14 +288,20 @@ button:hover {
 }
 
 .friend-item {
-    background-color: #1e1e1e;
-    border: 1px solid #444;
-    border-radius: 4px;
-    padding: 15px;
-    margin: 10px 0;
+    background-color: #000000;
+    border: 2px solid #ffffff;
+    border-radius: 0;
+    padding: 20px;
+    margin: 15px 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    transition: all 0.3s ease;
+}
+
+.friend-item:hover {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    border-color: #ffffff;
 }
 
 .friend-info {
@@ -186,33 +309,41 @@ button:hover {
 }
 
 .friend-name {
-    font-weight: bold;
-    color: #fff;
+    font-weight: 700;
+    color: #ffffff;
     margin-bottom: 5px;
+    font-size: 1.1em;
+    letter-spacing: 0.05em;
 }
 
 .friend-chatId {
-    font-size: 0.9em;
-    color: #aaa;
+    font-size: 0.85em;
+    color: #999999;
     font-family: monospace;
 }
 
 .friend-status {
     display: inline-block;
-    padding: 3px 8px;
-    border-radius: 3px;
-    font-size: 0.8em;
+    padding: 4px 10px;
+    border-radius: 0;
+    font-size: 0.75em;
     margin-left: 10px;
+    border: 1px solid;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
 }
 
 .friend-status.enabled {
-    background-color: #4CAF50;
-    color: #fff;
+    background-color: #ffffff;
+    color: #000000;
+    border-color: #ffffff;
 }
 
 .friend-status.disabled {
-    background-color: #666;
-    color: #ccc;
+    background-color: #000000;
+    color: #666666;
+    border-color: #666666;
 }
 
 .friend-actions {
@@ -240,233 +371,323 @@ button:hover {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #666;
+    background-color: #333333;
     transition: .4s;
-    border-radius: 24px;
+    border: 2px solid #ffffff;
+    border-radius: 0;
 }
 
 .toggle-slider:before {
     position: absolute;
     content: "";
-    height: 18px;
-    width: 18px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: #ffffff;
     transition: .4s;
-    border-radius: 50%;
+    border-radius: 0;
 }
 
 input:checked + .toggle-slider {
-    background-color: #4CAF50;
+    background-color: #ffffff;
 }
 
 input:checked + .toggle-slider:before {
     transform: translateX(26px);
+    background-color: #000000;
 }
 
 .btn-delete {
-    background-color: #f44336;
-    padding: 5px 15px;
-    font-size: 14px;
+    background-color: #000000;
+    border: 2px solid #ffffff;
+    padding: 6px 15px;
+    font-size: 12px;
 }
 
 .btn-delete:hover {
-    background-color: #d32f2f;
+    background-color: #ffffff;
+    color: #000000;
 }
 
 .empty-state {
     text-align: center;
-    color: #666;
-    padding: 20px;
+    color: #666666;
+    padding: 30px;
     font-style: italic;
+    font-size: 1em;
 }
 
-/* Welcome Banner */
+/* Welcome Banner - Modern Sleek Design */
 .welcome-banner {
-    background-color: #2d2d2d;
-    border: 2px solid #4CAF50;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 20px auto;
-    max-width: 600px;
+    background-color: rgba(0, 0, 0, 0.9);
+    border: 3px solid #ffffff;
+    border-radius: 0;
+    padding: 30px;
+    margin: 30px auto;
+    max-width: 700px;
     width: 90%;
+    position: relative;
+    z-index: 10;
+    box-shadow: 
+        0 0 40px rgba(255, 255, 255, 0.3),
+        inset 0 0 40px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
 }
 
 .welcome-top-banner {
     text-align: center;
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid #444;
+    margin-bottom: 30px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid #ffffff;
+    position: relative;
 }
 
 .welcome-title {
-    margin: 0 0 10px 0;
-    color: #4CAF50;
-    font-size: 1.8em;
-    font-weight: bold;
+    margin: 0 0 15px 0;
+    color: #ffffff;
+    font-size: 2.5em;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
 }
 
 .welcome-tagline {
     margin: 0;
-    color: #fff;
-    font-size: 1.1em;
-    font-weight: bold;
+    color: #ffffff;
+    font-size: 1.2em;
+    font-weight: 700;
     font-style: italic;
+    letter-spacing: 0.05em;
 }
 
 .welcome-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #666666;
+    padding-bottom: 15px;
 }
 
 .welcome-header h3 {
     margin: 0;
-    color: #4CAF50;
-    font-size: 1.2em;
+    color: #ffffff;
+    font-size: 1.4em;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
 }
 
 .btn-toggle {
-    background: none;
-    border: none;
-    color: #aaa;
+    background: #000000;
+    border: 2px solid #ffffff;
+    color: #ffffff;
     font-size: 18px;
     cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
+    padding: 8px 12px;
+    border-radius: 0;
+    transition: all 0.3s ease;
+    font-weight: 700;
 }
 
 .btn-toggle:hover {
-    background-color: #444;
-    color: #fff;
+    background-color: #ffffff;
+    color: #000000;
 }
 
 .welcome-body {
-    margin: 15px 0;
+    margin: 20px 0;
 }
 
 .welcome-name {
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }
 
 .welcome-name label {
     display: block;
-    margin-bottom: 5px;
-    color: #ccc;
+    margin-bottom: 8px;
+    color: #ffffff;
     font-size: 0.9em;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
 
 .name-input-group {
     display: flex;
-    gap: 10px;
+    gap: 15px;
 }
 
 .welcome-name input {
     flex: 1;
-    padding: 8px;
-    background-color: #1e1e1e;
-    border: 1px solid #555;
-    border-radius: 4px;
-    color: #fff;
+    padding: 12px;
+    background-color: #000000;
+    border: 2px solid #ffffff;
+    border-radius: 0;
+    color: #ffffff;
     font-size: 14px;
+    font-family: 'Courier New', monospace;
     box-sizing: border-box;
+    transition: all 0.3s ease;
 }
 
 .welcome-name input:focus {
     outline: none;
-    border-color: #4CAF50;
+    border-color: #ffffff;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
 }
 
 .welcome-name input:disabled {
     cursor: not-allowed;
-    opacity: 0.7;
+    opacity: 0.5;
+}
+
+.btn-enter-name {
+    background-color: #000000;
+    border: 2px solid #ffffff;
+    color: #ffffff;
+    padding: 12px 24px;
+    border-radius: 0;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.btn-enter-name:hover:not(:disabled) {
+    background-color: #ffffff;
+    color: #000000;
 }
 
 .btn-enter-name:disabled {
     cursor: default;
-}
-
-.btn-enter-name {
-    background-color: #2196F3;
-    color: white;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    white-space: nowrap;
-}
-
-.btn-enter-name:hover {
-    background-color: #1976D2;
+    opacity: 0.5;
 }
 
 .welcome-instructions {
-    background-color: #1e1e1e;
-    padding: 15px;
-    border-radius: 4px;
-    margin: 15px 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    border: 2px solid #ffffff;
+    padding: 20px;
+    border-radius: 0;
+    margin: 20px 0;
 }
 
 .welcome-instructions p {
     margin-top: 0;
-    color: #fff;
-    font-weight: bold;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 1.1em;
+    letter-spacing: 0.05em;
 }
 
 .welcome-instructions ol {
-    margin: 10px 0;
-    padding-left: 20px;
-    color: #ccc;
-    line-height: 1.8;
+    margin: 15px 0;
+    padding-left: 25px;
+    color: #ffffff;
+    line-height: 2;
 }
 
 .welcome-instructions li {
-    margin: 8px 0;
+    margin: 12px 0;
 }
 
 .welcome-instructions .nested-list {
-    margin: 8px 0 8px 20px;
-    padding-left: 20px;
-    color: #ccc;
-    line-height: 1.6;
+    margin: 10px 0 10px 25px;
+    padding-left: 25px;
+    color: #cccccc;
+    line-height: 1.8;
 }
 
 .welcome-instructions .nested-list li {
-    margin: 6px 0;
+    margin: 8px 0;
     list-style-type: disc;
 }
 
+/* Personality Selector */
+.personality-select {
+    background-color: #000000;
+    border: 2px solid #ffffff;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+}
+
+.personality-confirmation {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 0;
+    border: 2px solid #ffffff;
+}
+
+.personality-confirmation p {
+    margin: 0;
+    color: #ffffff;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+/* Guardian Info Box */
+.guardian-info-box {
+    margin-bottom: 20px;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 0;
+    border: 2px solid #ffffff;
+    font-size: 0.9em;
+}
+
+.guardian-info-box p {
+    margin: 0 0 10px 0;
+    color: #ffffff;
+    font-weight: 700;
+    font-style: italic;
+    letter-spacing: 0.05em;
+}
+
+.guardian-info-box ul {
+    margin: 0;
+    padding-left: 25px;
+    color: #cccccc;
+    line-height: 1.8;
+    font-style: italic;
+}
+
+/* Slouch Tracker */
+#slouchTrackerContainer {
+    background-color: rgba(0, 0, 0, 0.6);
+    border: 2px solid #ffffff;
+    padding: 20px;
+    border-radius: 0;
+}
+
+#slouchStats {
+    margin-top: 15px;
+    color: #ffffff;
+    font-size: 0.9em;
+    text-align: center;
+    font-weight: 700;
+}
+
+/* Test Button */
 .btn-test {
-    background-color: #FF9800;
-    color: white;
-    border: none;
-    padding: 5px 12px;
-    border-radius: 4px;
+    background-color: #000000;
+    border: 2px solid #ffffff;
+    color: #ffffff;
+    padding: 6px 15px;
+    border-radius: 0;
     cursor: pointer;
     font-size: 0.9em;
     margin-left: 5px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
 }
 
 .btn-test:hover {
-    background-color: #F57C00;
-}
-
-.welcome-footer {
-    margin-top: 15px;
-    text-align: right;
-}
-
-.welcome-footer .btn-primary {
-    padding: 10px 30px;
-}
-
-.welcome-footer .btn-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background-color: #666;
+    background-color: #ffffff;
+    color: #000000;
 }
