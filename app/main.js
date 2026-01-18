@@ -54,8 +54,8 @@ async function onPoseResults(results) {
     // Draw landmarks (optional, for debug)
     if (results.poseLandmarks) {
         if (window.drawConnectors && window.drawLandmarks) {
-            window.drawConnectors(ctx, results.poseLandmarks, window.POSE_CONNECTIONS, { color: '#FFFFFF', lineWidth: 4 });
-            window.drawLandmarks(ctx, results.poseLandmarks, { color: '#0000FF', lineWidth: 2 });
+            window.drawConnectors(ctx, results.poseLandmarks, window.POSE_CONNECTIONS, { color: '#00FF00', lineWidth: 4 });
+            window.drawLandmarks(ctx, results.poseLandmarks, { color: '#FF0000', lineWidth: 2 });
         }
 
         // Auto-calibrate check
