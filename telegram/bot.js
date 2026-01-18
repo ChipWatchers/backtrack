@@ -383,6 +383,11 @@ async function pollUpdates() {
             const friend = activeAlertSession.enabledFriends.find(f => f.chatId === chatId);
 
             if (text.trim() && friend && !activeAlertSession.responses.has(chatId)) {
+              // IGNORE COMMANDS (like /start) - Do not play them as TTS
+              if (text.trim().startsWith('/')) {
+                console.log(`🔇 Ignoring command '${text}' from ${friend.name} - not adding to TTS queue`);
+                continue;
+              }
               // Store the response with guardian's selected personality voiceId (if any)
               const friendName = friend.name;
               const guardianVoiceId = activeAlertSession.guardianPersonalities?.get(chatId) || null;
